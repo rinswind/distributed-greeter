@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Hello Microservices</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="stylesheet" type="text/css" href="/greeter/css/style.css"/>
+<script type="text/javascript" src="/greeter/js/jquery-3.1.1.js"></script>
+<script type="text/javascript" src="/greeter/js/greeter.js"></script>
+<!-- from https://code.jquery.com -->
+
+</head>
+<body>
+<h1>Hello Microservices</h1>
+<button id="greetPopup">Greet</button>
+<button id="loginPopup">Login</button>
+<button id="logoutPopup">Logout</button>
+<button id="registerPopup">Register</button>
+
+<!-- Modal login dialog -->
+<div id="loginModal" class="modal">
+    <form id="loginBox" class="modal-content" action="#">
+        <h2>Login</h2>
+        
+        <label id="loginMessage">None</label>
+        <br />
+        
+        <label>User:</label>
+        <input type="text" id="loginUser" />
+        <label>Password:</label>
+        <input type="password" id="loginPassword" />
+        
+        <input type="submit" id="loginSubmit" value="Login" />
+        <input type="button" id="loginClose" value="Close" />
+    </form>
+</div>
+
+<!-- Modal logout dialog -->
+<div id="logoutModal" class="modal">
+    <form id="logoutBox" class="modal-content" action="#">
+        <h2>Logout</h2>
+        
+        <label id="logoutMessage">None</label>
+        <br />
+                
+        <input type="button" id="logoutClose" value="Close" />
+    </form>
+</div>
+
+<!-- Modal login registration dialog -->
+<div id="registerModal" class="modal">
+    <form id="registerBox" class="modal-content" action="#">
+        <h2>Register</h2>
+        
+        <label id="registerMessage">None</label>
+        <br />
+        
+        <label>User:</label>
+        <input type="text" id="registerUser" />
+        <label>Password:</label>
+        <input type="password" id="registerPassword" />
+        <label>Password Repeat:</label>
+        <input type="password" id="registerPasswordRepeat" />
+        
+        <input type="submit" id="registerSubmit" value="Register" />
+        <input type="button" id="registerClose" value="Close" />
+    </form>
+</div>
+
+<!-- Modal greeting dialog -->
+<div id="greetModal" class="modal">
+    <form id="greetBox" class="modal-content" action="#">
+        <h2>Greeting</h2>
+        
+        <label id="greetMessage">None</label>
+        <br/>
+        
+        <label>Language</label>
+        <select id="greetLanguages">
+        </select>
+        <br/>
+                
+        <input type="submit" id="greetSubmit" value="Greet" />
+        <input type="button" id="greetClose" value="Close" />
+    </form>
+</div>
+
+</body>

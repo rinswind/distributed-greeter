@@ -1,0 +1,8 @@
+#!/bin/sh
+
+REGISTRY=localhost:32000
+IMAGE=example-services/greeter
+TAG=latest
+
+docker build -t $IMAGE:$TAG -t $REGISTRY/$IMAGE:$TAG .
+docker push $REGISTRY/$IMAGE:$TAG
