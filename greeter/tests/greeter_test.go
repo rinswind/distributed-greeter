@@ -57,7 +57,7 @@ func TestAuthzSplit(t *testing.T) {
 	// Greet
 	//
 	greeterService := "http://localhost:8090"
-	greeterServiceLangs := greeterService + "/greeters"
+	greeterServiceLangs := greeterService + "/greetings"
 
 	client := &http.Client{}
 

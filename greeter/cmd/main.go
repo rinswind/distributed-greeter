@@ -30,8 +30,8 @@ const (
 var (
 	greeters map[string]greeter
 
-	authzSplit             = regexp.MustCompile("Bearer ([a-zA-Z0-9=+/]+)")
-	jwtSecret  jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return []byte("secret"), nil }
+	authzSplit = regexp.MustCompile("Bearer (.+)")
+	jwtSecret  = "secret"
 )
 
 func init() {
@@ -153,19 +153,21 @@ func main() {
 	flag.IntVar(&port, "port", 8080, "The port to listen on")
 	flag.Parse()
 
+	jwtKey := func(t *jwt.Token) (interface{}, error) { return []byte(jwtSecret), nil }
+
 	router := mux.NewRouter().StrictSlash(true)
 
 	var allGreeters http.Handler = http.HandlerFunc(handleAllGreeters)
 	allGreeters = handlers.MethodHandler{http.MethodGet: allGreeters}
-	allGreeters = authHandler(jwtSecret, allGreeters)
-	allGreeters = handlers.LoggingHandler(os.Stdout, allGreeters)
-	router.Handle("/greeters", allGreeters)
+	allGreeters = authHandler(jwtKey, allGreeters)
+	router.Handle("/greetings", allGreeters)
 
 	var greeter http.Handler = http.HandlerFunc(handleGreeter)
 	greeter = handlers.MethodHandler{http.MethodGet: greeter}
-	greeter = authHandler(jwtSecret, greeter)
-	greeter = handlers.LoggingHandler(os.Stdout, greeter)
-	router.Handle("/greeters/{lang}", greeter)
+	greeter = authHandler(jwtKey, greeter)
+	router.Handle("/greetings/{lang}", greeter)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), router))
+	iface := fmt.Sprintf(":%v", port)
+	log.Println("Starting to listen on ", iface)
+	log.Fatal(http.ListenAndServe(iface, handlers.LoggingHandler(os.Stdout, router)))
 }

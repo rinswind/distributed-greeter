@@ -4,7 +4,7 @@ function toAppPath(relative) {
 
 // Login
 $(document).ready(function() {
-    $("#loginPopup").click(function (event) {
+    $("#loginPopup").click(function(event) {
         event.preventDefault();
 
         if (typeof window.jwt === "undefined") {
@@ -16,7 +16,7 @@ $(document).ready(function() {
         $("#loginModal").css("display", "block");
     });
 
-    $("#loginBox").submit(function (event) {
+    $("#loginBox").submit(function(event) {
         event.preventDefault();
 
         var user = $("#loginUser").val();
@@ -36,13 +36,13 @@ $(document).ready(function() {
         }).fail(function(resp) {
             $("#loginMessage").text("Login failure: " + resp.status);
         }).done(function(resp) {
-            // Store the login
-            window.jwt = resp.token;
+            // Store the login base64 encoded so it is ready to pass to the Authorization header
+            window.jwt = btoa(resp.token);
             $("#loginMessage").text("Login success");
         });
     });
 
-    $("#loginClose").click(function (event) {
+    $("#loginClose").click(function(event) {
         event.preventDefault();
         $("#loginModal").css("display", "none");
     });
@@ -50,7 +50,7 @@ $(document).ready(function() {
 
 // Logout
 $(document).ready(function() {
-    $("#logoutPopup").click(function (event) {
+    $("#logoutPopup").click(function(event) {
         event.preventDefault();
 
         if (typeof window.jwt === "undefined") {
@@ -63,7 +63,7 @@ $(document).ready(function() {
         $("#logoutModal").css("display", "block");
     });
 
-    $("#logoutClose").click(function (event) {
+    $("#logoutClose").click(function(event) {
         event.preventDefault();
         $("#logoutModal").css("display", "none");
     });
@@ -71,7 +71,7 @@ $(document).ready(function() {
 
 // Registration
 $(document).ready(function() {
-    $("#registerPopup").click(function (event) {
+    $("#registerPopup").click(function(event) {
         event.preventDefault();
 
         if (typeof window.jwt === "undefined") {
@@ -83,7 +83,7 @@ $(document).ready(function() {
         $("#registerModal").css("display", "block");
     });
 
-    $("#registerBox").submit(function (event) {
+    $("#registerBox").submit(function(event) {
         event.preventDefault();
 
         var user = $("#registerUser").val();
@@ -91,7 +91,7 @@ $(document).ready(function() {
         var passwordRepeat = $("#registerPasswordRepeat").val();
 
         if (!(password === passwordRepeat)) {
-            $("#registerMessage").text("Passwords are not equal");
+            $("#registerMessage").text("Passwords do not match");
             return;
         }
 
@@ -129,10 +129,10 @@ $(document).ready(function() {
 
         $.ajax({
             type: "GET",
-            url: toAppPath("greetings"),
+            url: toAppPath("messages/greetings"),
             dataType: "json",
             headers: {
-                // Retrieve login stored in page
+                // Retrieve login from the window object
                 "Authorization": "Bearer " + window.jwt
             },
             data: ""
@@ -142,7 +142,7 @@ $(document).ready(function() {
                 .attr("value", "none")
                 .text("Failed to get languages: " + resp.status));
         }).done(function(resp) {
-            $.each(resp, function(key, val) {
+            $.each(resp.languages, function(key, val) {
                 $("#greetLanguages").append(
                     $("<option></option>")
                     .attr("value", key)
@@ -160,10 +160,10 @@ $(document).ready(function() {
         
         $.ajax({
             type: "GET",
-            url: toAppPath("greetings/" + language),
+            url: toAppPath("messages/greetings/" + language),
             dataType: "json",
             headers: {
-                // Retrieve login
+                // Retrieve login from the window object
                 "Authorization": "Bearer " + window.jwt
             },
             data: ""

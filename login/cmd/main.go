@@ -142,14 +142,14 @@ func main() {
 	var createUser http.Handler = http.HandlerFunc(handleCreateUser)
 	createUser = handlers.MethodHandler{http.MethodPost: createUser}
 	createUser = handlers.ContentTypeHandler(createUser, mimeApplicationJSON)
-	createUser = handlers.LoggingHandler(os.Stdout, createUser)
 	router.Handle("/users", createUser)
 
 	var login http.Handler = http.HandlerFunc(handleLogin)
 	login = handlers.MethodHandler{http.MethodPost: login}
 	login = handlers.ContentTypeHandler(login, mimeApplicationJSON)
-	login = handlers.LoggingHandler(os.Stdout, login)
 	router.Handle("/login", login)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", port), router))
+	iface := fmt.Sprintf(":%v", port)
+	log.Println("Starting to listen on ", iface)
+	log.Fatal(http.ListenAndServe(iface, handlers.LoggingHandler(os.Stdout, router)))
 }
