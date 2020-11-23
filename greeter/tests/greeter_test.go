@@ -11,11 +11,20 @@ import (
 	"testing"
 )
 
+var (
+	ingress = "http://10.64.140.43"
+
+	loginService = ingress + "/greeter/auth"
+	loginUser    = "tobo"
+	loginPass    = "obot"
+
+	greeterService = ingress + "/greeter/messages"
+)
+
 func TestAuthzSplit(t *testing.T) {
 	//
 	// Login
 	//
-	loginService := "http://localhost:8080"
 	loginServiceUsers := loginService + "/users"
 	loginServiceLogin := loginService + "/login"
 
@@ -24,7 +33,7 @@ func TestAuthzSplit(t *testing.T) {
 		Password string `json:"password"`
 	}
 
-	user := User{User: "tobo", Password: "obot"}
+	user := User{User: loginUser, Password: loginPass}
 
 	userStr, _ := json.Marshal(user)
 
@@ -45,18 +54,9 @@ func TestAuthzSplit(t *testing.T) {
 	tokenJSON := Token{}
 	readJSON(t, resp.Body, &tokenJSON)
 
-	// key := func(t *jwt.Token) (interface{}, error) { return []byte("secret"), nil }
-
-	// token, err := jwt.Parse(tokenJSON.Token, key)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// fmt.Println("jwt claims: ", token.Claims)
-
 	//
 	// Greet
 	//
-	greeterService := "http://localhost:8090"
 	greeterServiceLangs := greeterService + "/greetings"
 
 	client := &http.Client{}

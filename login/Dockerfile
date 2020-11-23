@@ -52,4 +52,6 @@ USER appuser:appuser
 ENTRYPOINT ["/main"]
 CMD ["-port", "8080"]
 
+ENV JWT_SECRET="secret"
+
 EXPOSE 8080
