@@ -12,29 +12,27 @@ import (
 )
 
 var (
-	ingress = "http://10.64.140.43"
-
-	loginService = ingress + "/greeter/auth"
-	loginUser    = "tobo"
-	loginPass    = "obot"
-
+	ingress        = "http://10.64.140.43"
+	loginService   = ingress + "/greeter/auth"
 	greeterService = ingress + "/greeter/messages"
 )
 
 func TestAuthzSplit(t *testing.T) {
+	loginUser := "tobo"
+	loginPass := "obot"
+
 	//
 	// Login
 	//
 	loginServiceUsers := loginService + "/users"
 	loginServiceLogin := loginService + "/login"
 
-	type User struct {
-		User     string `json:"user"`
-		Password string `json:"password"`
+	type LoginRequest struct {
+		User     string `json:"user_name"`
+		Password string `json:"user_password"`
 	}
 
-	user := User{User: loginUser, Password: loginPass}
-
+	user := &LoginRequest{User: loginUser, Password: loginPass}
 	userStr, _ := json.Marshal(user)
 
 	_, err := http.Post(loginServiceUsers, "application/json", strings.NewReader(string(userStr)))
@@ -42,8 +40,9 @@ func TestAuthzSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type Token struct {
-		Token string `json:"token"`
+	type LoginInfo struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	resp, err := http.Post(loginServiceLogin, "application/json", strings.NewReader(string(userStr)))
@@ -51,19 +50,17 @@ func TestAuthzSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tokenJSON := Token{}
-	readJSON(t, resp.Body, &tokenJSON)
+	loginInfo := &LoginInfo{}
+	readJSON(t, resp.Body, loginInfo)
 
 	//
 	// Greet
 	//
 	greeterServiceLangs := greeterService + "/greetings"
 
-	client := &http.Client{}
-
 	req, err := http.NewRequest("GET", greeterServiceLangs, nil)
-	req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(tokenJSON.Token)))
-	resp, err = client.Do(req)
+	req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
+	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,8 +74,8 @@ func TestAuthzSplit(t *testing.T) {
 	for _, path := range langJSON.Langs {
 		langService := greeterService + path
 		req, err = http.NewRequest("GET", langService, nil)
-		req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(tokenJSON.Token)))
-		resp, err = client.Do(req)
+		req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
+		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,6 +89,30 @@ func TestAuthzSplit(t *testing.T) {
 		readJSON(t, resp.Body, &msgJSON)
 
 		fmt.Println(msgJSON)
+	}
+
+	//
+	// Logout
+	//
+	loginServiceLogout := loginService + "/logout"
+
+	type LogoutInfo struct {
+		AccessToken string `json:"access_token"`
+	}
+
+	logout := &LogoutInfo{AccessToken: loginInfo.AccessToken}
+	logoutStr, _ := json.Marshal(logout)
+
+	_, err = http.Post(loginServiceLogout, "application/json", strings.NewReader(string(logoutStr)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req, err = http.NewRequest("GET", greeterServiceLangs, nil)
+	req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
+	resp, err = http.DefaultClient.Do(req)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatal(resp)
 	}
 }
 

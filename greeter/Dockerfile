@@ -52,6 +52,8 @@ USER appuser:appuser
 ENTRYPOINT ["/main"]
 CMD ["-port", "8080"]
 
-ENV JWT_SECRET="secret"
+ENV REDIS_DSN="redis:6379"
+ENV ACCESS_TOKEN_SECRET="secret"
+ENV REFRESH_TOKEN_SECRET="secret"
 
 EXPOSE 8080

@@ -22,22 +22,20 @@ $(document).ready(function() {
         var user = $("#loginUser").val();
         var password = $("#loginPassword").val();
 
-        var account = {
-            user: user,
-            password: password 
-        };
-
         $.ajax({
             type: "POST",
             url: toAppPath("auth/login"),
             dataType: "json",
             contentType: "application/json",
-            data: JSON.stringify(account)
+            data: JSON.stringify({
+                user_name: user,
+                user_password: password 
+            })
         }).fail(function(resp) {
             $("#loginMessage").text("Login failure: " + resp.status);
         }).done(function(resp) {
-            // Store the login base64 encoded so it is ready to pass to the Authorization header
-            window.jwt = btoa(resp.token);
+            // Store jwt in the page root window object
+            window.jwt = resp.access_token;
             $("#loginMessage").text("Login success");
         });
     });
@@ -56,7 +54,20 @@ $(document).ready(function() {
         if (typeof window.jwt === "undefined") {
             $("#logoutMessage").text("Not logged in");
         } else {
-            delete window.jwt;
+            $.ajax({
+                type: "POST",
+                url: toAppPath("auth/logout"),
+                dataType: "json",
+                contentType: "application/json",
+                data: JSON.stringify({
+                    access_token: window.jwt
+                })
+            }).fail(function(resp) {
+                $("#loginMessage").text("Logout failure: " + resp.status);
+            }).done(function(resp) {
+                $("#loginMessage").text("Logout success");
+            });
+    
             $("#logoutMessage").text("Logged out");
         }
 
@@ -95,16 +106,14 @@ $(document).ready(function() {
             return;
         }
 
-        var account = {
-           user: user,
-           password: password 
-        };
-
         $.ajax({
             type: "POST",
             url: toAppPath("auth/users"),
             contentType: "application/json",
-            data: JSON.stringify(account)
+            data: JSON.stringify({
+                user_name: user,
+                user_password: password
+            })
         }).fail(function(resp) {
             $("#registerMessage").text("Registration failure: " + resp.status);
         }).done(function(resp) {
@@ -133,7 +142,7 @@ $(document).ready(function() {
             dataType: "json",
             headers: {
                 // Retrieve login from the window object
-                "Authorization": "Bearer " + window.jwt
+                "Authorization": "Bearer " + btoa(window.jwt)
             },
             data: ""
         }).fail(function(resp) {
@@ -164,7 +173,7 @@ $(document).ready(function() {
             dataType: "json",
             headers: {
                 // Retrieve login from the window object
-                "Authorization": "Bearer " + window.jwt
+                "Authorization": "Bearer " + btoa(window.jwt)
             },
             data: ""
         }).fail(function(resp) {
