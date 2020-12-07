@@ -50,10 +50,10 @@ COPY --from=builder /app/main .
 USER appuser:appuser
 
 ENTRYPOINT ["/main"]
-CMD ["-port", "8080"]
 
-ENV REDIS_DSN="redis:6379"
-ENV ACCESS_TOKEN_SECRET="secret"
-ENV REFRESH_TOKEN_SECRET="secret"
+ENV HTTP_PORT=8080\
+    REDIS_DSN="redis:6379"\
+    ACCESS_TOKEN_SECRET=secret\
+    REFRESH_TOKEN_SECRET=secret
 
 EXPOSE 8080

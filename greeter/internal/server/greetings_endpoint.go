@@ -26,15 +26,15 @@ var (
 
 // MakeGreeterEndpoint creates a router for the greeter REST endpoint
 func init() {
-	var allGreeters http.Handler = http.HandlerFunc(handleAllGreeters)
-	allGreeters = handlers.MethodHandler{http.MethodGet: allGreeters}
-	allGreeters = auth.Handler(allGreeters)
-	router.Handle("/greetings", allGreeters)
+	router.Handle("/greetings",
+		auth.Handler(
+			handlers.MethodHandler{
+				http.MethodGet: http.HandlerFunc(handleAllGreeters)}))
 
-	var greeter http.Handler = http.HandlerFunc(handleGreeter)
-	greeter = handlers.MethodHandler{http.MethodGet: greeter}
-	greeter = auth.Handler(greeter)
-	router.Handle("/greetings/{lang}", greeter)
+	router.Handle("/greetings/{lang}",
+		auth.Handler(
+			handlers.MethodHandler{
+				http.MethodGet: http.HandlerFunc(handleGreeter)}))
 }
 
 // ServeHTTP makes the greetings endpoint an http.Handler

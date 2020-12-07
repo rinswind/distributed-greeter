@@ -8,17 +8,16 @@ RUN apk update && \
     apk add --no-cache git ca-certificates tzdata && \
     update-ca-certificates
 
-# Create appuser
-ENV USER=appuser
-ENV UID=10001
-
-RUN adduser \    
-    --disabled-password \    
-    --gecos "" \    
-    --home "/nonexistent" \    
-    --shell "/sbin/nologin" \    
-    --no-create-home \    
-    --uid "${UID}" \    
+# Create unprivileged appuser
+ENV USER="appuser" \
+    UID="10001"
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
     "${USER}"
 
 # Copy code into builder
@@ -32,7 +31,9 @@ RUN go mod download
 RUN go mod verify
 
 # Build statically linked app
-RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o main ./cmd/main.go
+
+# Debug version
+RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o app ./cmd/main.go
 
 # 
 # Runtime
@@ -49,14 +50,14 @@ COPY --from=builder /app/main .
 # Use an unprivileged user.
 USER appuser:appuser
 
+# Debug version
 ENTRYPOINT ["/main"]
-CMD ["-port", "8080"]
 
-ENV REDIS_DSN="redis:6379"
-ENV ACCESS_TOKEN_SECRET="secret"
-ENV ACCESS_TOKEN_EXPIRY="5"
-
-ENV REFRESH_TOKEN_SECRET="secret"
-ENV REFRESH_TOKEN_EXPIRY="60"
+ENV HTTP_PORT=8080 \
+    REDIS_DSN="redis:6379" \
+    ACCESS_TOKEN_SECRET=secret \
+    ACCESS_TOKEN_EXPIRY=5 \
+    REFRESH_TOKEN_SECRET=secret \
+    REFRESH_TOKEN_EXPIRY=60
 
 EXPOSE 8080
