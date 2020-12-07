@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -55,30 +54,30 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type CreateUserRequest struct {
-		UserName string `json:"user_name"`
-		UserPass string `json:"user_password"`
+	type UserCreds struct {
+		Name     string `json:"user_name"`
+		Password string `json:"user_password"`
 	}
 
-	var userMsg CreateUserRequest
+	var userMsg UserCreds
 	err = json.Unmarshal(jsonStr, &userMsg)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusUnprocessableEntity)
 		return
 	}
 
-	userid, err := users.CreateUser(userMsg.UserName, userMsg.UserPass)
+	userid, err := users.CreateUser(userMsg.Name, userMsg.Password)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
 		return
 	}
 
 	type UserInfo struct {
-		UserID   uint64 `json:"user_id"`
-		UserName string `json:"user_name"`
+		ID   uint64 `json:"user_id"`
+		Name string `json:"user_name"`
 	}
 
-	userInfoMsg := &UserInfo{UserID: userid, UserName: userMsg.UserName}
+	userInfoMsg := &UserInfo{ID: userid, Name: userMsg.Name}
 	err = writeJSON(w, userInfoMsg)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
@@ -90,10 +89,10 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func handleListUsers(w http.ResponseWriter, r *http.Request) {
 	type Users struct {
-		UserIDs []uint64 `json:"user_ids"`
+		IDs []uint64 `json:"user_ids"`
 	}
 
-	userIdsMsg := &Users{UserIDs: *users.ListUserIDs()}
+	userIdsMsg := &Users{IDs: *users.ListUserIDs()}
 
 	err := writeJSON(w, userIdsMsg)
 	if err != nil {
@@ -120,11 +119,11 @@ func handleUserInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type UserInfo struct {
-		UserID   uint64 `json:"user_id"`
-		UserName string `json:"user_name"`
+		ID   uint64 `json:"user_id"`
+		Name string `json:"user_name"`
 	}
 
-	userInfoMsg := &UserInfo{UserID: user.ID, UserName: user.Name}
+	userInfoMsg := &UserInfo{ID: user.ID, Name: user.Name}
 	err = writeJSON(w, userInfoMsg)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
@@ -136,8 +135,6 @@ func handleUserInfo(w http.ResponseWriter, r *http.Request) {
 
 func handleUserDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
-	log.Printf("DELETE %v\n", vars)
 
 	id, err := strconv.ParseUint(vars["id"], 10, 64)
 	if err != nil {
@@ -153,25 +150,25 @@ func handleUserDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {
-	type LoginRequest struct {
-		UserName string `json:"user_name"`
-		UserPass string `json:"user_password"`
+	type UserCreds struct {
+		Name     string `json:"user_name"`
+		Password string `json:"user_password"`
 	}
 
-	var loginMsg LoginRequest
+	var loginMsg UserCreds
 	err := readJSON(r.Body, &loginMsg)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusUnprocessableEntity)
 		return
 	}
 
-	user, err := users.GetUserByName(loginMsg.UserName)
+	user, err := users.GetUserByName(loginMsg.Name)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
 		return
 	}
 
-	if user.Pass != loginMsg.UserPass {
+	if user.Pass != loginMsg.Password {
 		http.Error(w, "Bad user or password", http.StatusUnauthorized)
 		return
 	}

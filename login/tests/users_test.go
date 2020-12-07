@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -16,60 +17,64 @@ var (
 )
 
 func TestDeleteUser(t *testing.T) {
-	const IDs = 10
-
 	loginServiceUsers := loginService + "/users"
 
-	//
-	// Create users
-	//
-	for i := 0; i < 10; i++ {
-		type LoginRequest struct {
-			User     string `json:"user_name"`
-			Password string `json:"user_password"`
-		}
-
-		user := &LoginRequest{User: fmt.Sprintf("user-%v", i), Password: fmt.Sprintf("pass-%v", i)}
-		userStr := writeJSON(t, user)
-
-		_, err := http.Post(loginServiceUsers, "application/json", strings.NewReader(string(userStr)))
-		if err != nil {
-			t.Fatal(err)
-		}
+	type UserCreds struct {
+		Name     string `json:"user_name"`
+		Password string `json:"user_password"`
 	}
 
-	for id := 0; id < IDs; id++ {
-		type UserInfo struct {
-			UserID   uint64 `json:"user_id"`
-			UserName string `json:"user_name"`
-		}
+	type UserInfo struct {
+		ID   uint64 `json:"user_id"`
+		Name string `json:"user_name"`
+	}
 
-		userURL := fmt.Sprint(loginServiceUsers, "/", id)
+	//
+	// Create user
+	//
+	credsStr := writeJSON(t, &UserCreds{Name: fmt.Sprintf("user-%v", time.Now()), Password: "pass"})
+	resp, err := http.Post(loginServiceUsers, "application/json", strings.NewReader(string(credsStr)))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		resp, err := http.Get(userURL)
-		if err != nil {
-			t.Fatal(err)
-		}
+	user := &UserInfo{}
+	readJSON(t, resp.Body, user)
 
-		user := &UserInfo{}
-		readJSON(t, resp.Body, user)
+	userURL := fmt.Sprint(loginServiceUsers, "/", user.ID)
 
-		req, err := http.NewRequest("Delete", userURL, nil)
-		resp, err = http.DefaultClient.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("Invalid status '%v %v' on DELETE %v", resp.StatusCode, resp.Status, userURL)
-		}
+	//
+	// Get user
+	//
+	resp, err = http.Get(userURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Invalid status '%v %v' on GET %v", resp.StatusCode, resp.Status, userURL)
+	}
 
-		resp, err = http.Get(fmt.Sprint(loginServiceUsers, "/", id))
-		if err != nil {
-			t.Fatal(err)
-		}
-		if resp.StatusCode != http.StatusNotFound {
-			t.Fatalf("Invalid status %v on GET %v", http.StatusNotFound, userURL)
-		}
+	//
+	// Delete user
+	//
+	req, err := http.NewRequest(http.MethodDelete, userURL, nil)
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("Invalid status '%v %v' on DELETE %v", resp.StatusCode, resp.Status, userURL)
+	}
+
+	//
+	// Check user is missing
+	//
+	resp, err = http.Get(fmt.Sprint(loginServiceUsers, "/", user.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("Invalid status %v on GET %v", http.StatusNotFound, userURL)
 	}
 }
 

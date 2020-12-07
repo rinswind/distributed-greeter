@@ -26,6 +26,7 @@ RUN CGO_ENABLED=0 go build -gcflags="all=-N -l" -ldflags="-extldflags=-static" -
 # 
 # Runtime
 #
+# Base on something with a basic shell (statically compiled against musl)
 FROM busybox:musl
 
 # Import from builder
@@ -56,7 +57,15 @@ ENV HTTP_PORT="8080" \
     REFRESH_TOKEN_SECRET="secret" \
     REFRESH_TOKEN_EXPIRY="60"
 
-ENTRYPOINT ["dlv", "--listen=:40000", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/usr/bin/app"]
+#  "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc", \
+ENTRYPOINT [ "dlv", \
+    "--listen=:40000", \
+    "--headless=true", \
+    "--log=true", \
+    "--log-output=debugger,debuglineerr", \
+    "--api-version=2", \
+    "--accept-multiclient", \
+    "exec", "/usr/bin/app"]
 
 EXPOSE 8080
 EXPOSE 40000
