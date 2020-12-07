@@ -66,3 +66,33 @@ func GetUserByID(id uint64) (*User, error) {
 	}
 	return user, nil
 }
+
+// ListUserIDs lists all user IDs
+func ListUserIDs() *[]uint64 {
+	lock.Lock()
+	defer lock.Unlock()
+
+	ids := make([]uint64, len(byID))
+	i := 0
+	for id := range byID {
+		ids[i] = id
+		i++
+	}
+
+	return &ids
+}
+
+// DeleteUser deletes a used by ID
+func DeleteUser(id uint64) error {
+	lock.Lock()
+	defer lock.Unlock()
+
+	user, ok := byID[id]
+	if !ok {
+		return fmt.Errorf("User %v not available", id)
+	}
+
+	delete(byID, id)
+	delete(byName, user.Name)
+	return nil
+}

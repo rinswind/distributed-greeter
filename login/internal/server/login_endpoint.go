@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"strconv"
 
 	"example.org/services/login/internal/auth"
 	"example.org/services/login/internal/users"
@@ -22,20 +24,22 @@ var (
 )
 
 func init() {
-	var createUser http.Handler = http.HandlerFunc(handleCreateUser)
-	createUser = handlers.MethodHandler{http.MethodPost: createUser}
-	createUser = handlers.ContentTypeHandler(createUser, mimeApplicationJSON)
-	router.Handle("/users", createUser)
+	router.Handle("/users", handlers.MethodHandler{
+		http.MethodPost: handlers.ContentTypeHandler(
+			http.HandlerFunc(handleCreateUser), mimeApplicationJSON),
+		http.MethodGet: http.HandlerFunc(handleListUsers)})
 
-	var login http.Handler = http.HandlerFunc(handleLogin)
-	login = handlers.MethodHandler{http.MethodPost: login}
-	login = handlers.ContentTypeHandler(login, mimeApplicationJSON)
-	router.Handle("/login", login)
+	router.Handle("/users/{id}", handlers.MethodHandler{
+		http.MethodGet:    http.HandlerFunc(handleUserInfo),
+		http.MethodDelete: http.HandlerFunc(handleUserDelete)})
 
-	var logout http.Handler = http.HandlerFunc(handleLogout)
-	logout = handlers.MethodHandler{http.MethodPost: logout}
-	logout = handlers.ContentTypeHandler(logout, mimeApplicationJSON)
-	router.Handle("/logout", logout)
+	router.Handle("/login", handlers.MethodHandler{
+		http.MethodPost: handlers.ContentTypeHandler(
+			http.HandlerFunc(handleLogin), mimeApplicationJSON)})
+
+	router.Handle("/logout", handlers.MethodHandler{
+		http.MethodPost: handlers.ContentTypeHandler(
+			http.HandlerFunc(handleLogout), mimeApplicationJSON)})
 }
 
 // ServeHTTP is the root of the Login REST endpoint
@@ -82,6 +86,70 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", mimeApplicationJSON)
+}
+
+func handleListUsers(w http.ResponseWriter, r *http.Request) {
+	type Users struct {
+		UserIDs []uint64 `json:"user_ids"`
+	}
+
+	userIdsMsg := &Users{UserIDs: *users.ListUserIDs()}
+
+	err := writeJSON(w, userIdsMsg)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", mimeApplicationJSON)
+}
+
+func handleUserInfo(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id, err := strconv.ParseUint(vars["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+		return
+	}
+
+	user, err := users.GetUserByID(id)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusNotFound)
+		return
+	}
+
+	type UserInfo struct {
+		UserID   uint64 `json:"user_id"`
+		UserName string `json:"user_name"`
+	}
+
+	userInfoMsg := &UserInfo{UserID: user.ID, UserName: user.Name}
+	err = writeJSON(w, userInfoMsg)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", mimeApplicationJSON)
+}
+
+func handleUserDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	log.Printf("DELETE %v\n", vars)
+
+	id, err := strconv.ParseUint(vars["id"], 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+		return
+	}
+
+	err = users.DeleteUser(id)
+	if err != nil {
+		http.Error(w, fmt.Sprint(err), http.StatusNotFound)
+		return
+	}
 }
 
 func handleLogin(w http.ResponseWriter, r *http.Request) {

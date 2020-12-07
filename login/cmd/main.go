@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,10 +12,7 @@ import (
 )
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8080, "The port to listen on")
-	flag.Parse()
-
+	port := os.Getenv("HTTP_PORT")
 	iface := fmt.Sprintf(":%v", port)
 	log.Println("Starting to listen on ", iface)
 	log.Fatal(http.ListenAndServe(iface, handlers.LoggingHandler(os.Stdout, http.HandlerFunc(server.ServeHTTP))))
