@@ -31,8 +31,6 @@ RUN go mod download
 RUN go mod verify
 
 # Build statically linked app
-
-# Debug version
 RUN CGO_ENABLED=0 go build -ldflags="-extldflags=-static" -o app ./cmd/main.go
 
 # 
@@ -45,19 +43,19 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
-COPY --from=builder /app/main .
+COPY --from=builder /app/app /
 
 # Use an unprivileged user.
 USER appuser:appuser
-
-# Debug version
-ENTRYPOINT ["/main"]
 
 ENV HTTP_PORT=8080 \
     REDIS_DSN="redis:6379" \
     ACCESS_TOKEN_SECRET=secret \
     ACCESS_TOKEN_EXPIRY=5 \
     REFRESH_TOKEN_SECRET=secret \
-    REFRESH_TOKEN_EXPIRY=60
+    REFRESH_TOKEN_EXPIRY=60 \
+    GIN_MODE=release
+
+ENTRYPOINT ["/app"]
 
 EXPOSE 8080

@@ -60,12 +60,15 @@ ENV HTTP_PORT="8080" \
 #  "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc", \
 ENTRYPOINT [ "dlv", \
     "--listen=:40000", \
-    "--headless=true", \
-    "--log=true", \
-    "--log-output=debugger,debuglineerr", \
     "--api-version=2", \
-    "--accept-multiclient", \
-    "exec", "/usr/bin/app"]
+    "--accept-multiclient", \ 
+    "--headless", \
+    "--log", \
+    "--log-output=debugger,debuglineerr", \ 
+    # Exec
+    "exec", \
+    "--continue", \ 
+    "/usr/bin/app"]
 
 EXPOSE 8080
 EXPOSE 40000

@@ -32,7 +32,7 @@ func TestDeleteUser(t *testing.T) {
 	//
 	// Create user
 	//
-	credsStr := writeJSON(t, &UserCreds{Name: fmt.Sprintf("user-%v", time.Now()), Password: "pass"})
+	credsStr := writeJSON(t, &UserCreds{Name: fmt.Sprintf("user-%v", time.Now().Format("15:04:05.000")), Password: "pass"})
 	resp, err := http.Post(loginServiceUsers, "application/json", strings.NewReader(string(credsStr)))
 	if err != nil {
 		t.Fatal(err)
@@ -42,6 +42,7 @@ func TestDeleteUser(t *testing.T) {
 	readJSON(t, resp.Body, user)
 
 	userURL := fmt.Sprint(loginServiceUsers, "/", user.ID)
+	t.Log("Created user")
 
 	//
 	// Get user
@@ -54,6 +55,8 @@ func TestDeleteUser(t *testing.T) {
 		t.Fatalf("Invalid status '%v %v' on GET %v", resp.StatusCode, resp.Status, userURL)
 	}
 
+	t.Log("Obtained user")
+
 	//
 	// Delete user
 	//
@@ -65,6 +68,7 @@ func TestDeleteUser(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Invalid status '%v %v' on DELETE %v", resp.StatusCode, resp.Status, userURL)
 	}
+	t.Log("Deleted user")
 
 	//
 	// Check user is missing
@@ -76,6 +80,7 @@ func TestDeleteUser(t *testing.T) {
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("Invalid status %v on GET %v", http.StatusNotFound, userURL)
 	}
+	t.Log("Filed to get user")
 }
 
 func TestAuthzSplit(t *testing.T) {
