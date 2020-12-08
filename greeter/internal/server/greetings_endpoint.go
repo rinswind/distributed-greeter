@@ -1,71 +1,54 @@
 package server
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
-	"regexp"
 
 	"example.org/services/greeter/internal/auth"
 	"example.org/services/greeter/internal/messages"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
-)
-
-const (
-	mimeApplicationJSON = "application/json"
+	"github.com/gin-gonic/gin"
 )
 
 var (
-	authzSplit = regexp.MustCompile("Bearer (.+)")
-
-	router = mux.NewRouter().StrictSlash(true)
+	router = gin.Default()
 )
 
 // MakeGreeterEndpoint creates a router for the greeter REST endpoint
 func init() {
-	router.Handle("/greetings",
-		auth.Handler(
-			handlers.MethodHandler{
-				http.MethodGet: http.HandlerFunc(handleAllGreeters)}))
-
-	router.Handle("/greetings/{lang}",
-		auth.Handler(
-			handlers.MethodHandler{
-				http.MethodGet: http.HandlerFunc(handleGreeter)}))
+	router.Use(gin.HandlerFunc(auth.Handler))
+	router.GET("/greetings", handleAllGreeters)
+	router.GET("/greetings/:lang", handleGreeter)
 }
 
-// ServeHTTP makes the greetings endpoint an http.Handler
-func ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	router.ServeHTTP(w, r)
+// Run starts the rest endpoint
+func Run(iface string) {
+	router.Run(iface)
 }
 
-func handleAllGreeters(w http.ResponseWriter, r *http.Request) {
+// GET /greetings
+func handleAllGreeters(c *gin.Context) {
 	type Languages struct {
 		Langs map[string]string `json:"languages"`
 	}
 
 	langs := Languages{Langs: make(map[string]string)}
 	for ln := range messages.Greeters {
-		langs.Langs[ln] = r.RequestURI + "/" + ln
+		langs.Langs[ln] = c.Request.RequestURI + "/" + ln
 	}
 
-	err := writeJSON(w, langs)
-	if err != nil {
-		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
+	c.JSON(http.StatusOK, &langs)
+}
+
+// GET /greetings/:lang
+func handleGreeter(c *gin.Context) {
+	lang := c.Param("lang")
+
+	authCtx, ok := c.Get(auth.ContextKey)
+	if !ok {
+		c.Status(http.StatusUnauthorized)
 		return
 	}
 
-	w.Header().Set("Content-Type", mimeApplicationJSON)
-}
-
-func handleGreeter(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	lang := vars["lang"]
-
-	authClaims := r.Context().Value(auth.Ctx{}).(map[string]interface{})
+	authClaims := authCtx.(map[string]interface{})
 	user, _ := authClaims["user_name"].(string)
 
 	msg := messages.Greeters[lang](user)
@@ -77,35 +60,5 @@ func handleGreeter(w http.ResponseWriter, r *http.Request) {
 
 	message := Message{Language: lang, Message: msg}
 
-	err := writeJSON(w, message)
-	if err != nil {
-		http.Error(w, fmt.Sprint(err), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", mimeApplicationJSON)
-}
-
-func readJSON(in io.Reader, out interface{}) error {
-	jsonStr, err := ioutil.ReadAll(in)
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(jsonStr, out)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func writeJSON(out io.Writer, in interface{}) error {
-	json, err := json.Marshal(in)
-	if err != nil {
-		return err
-	}
-	out.Write(json)
-	if err != nil {
-		return err
-	}
-	return nil
+	c.JSON(http.StatusOK, &message)
 }

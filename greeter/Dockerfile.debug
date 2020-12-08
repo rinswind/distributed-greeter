@@ -53,9 +53,7 @@ USER appuser:appuser
 ENV HTTP_PORT="8080" \
     REDIS_DSN="redis:6379" \
     ACCESS_TOKEN_SECRET="secret" \
-    ACCESS_TOKEN_EXPIRY="5" \
-    REFRESH_TOKEN_SECRET="secret" \
-    REFRESH_TOKEN_EXPIRY="60"
+    REFRESH_TOKEN_SECRET="secret"
 
 #  "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc", \
 ENTRYPOINT [ "dlv", \
