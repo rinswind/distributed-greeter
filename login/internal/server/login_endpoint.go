@@ -10,10 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	mimeApplicationJSON = "application/json"
-)
-
 var (
 	router = gin.Default()
 )
@@ -106,7 +102,7 @@ func handleUserDelete(c *gin.Context) {
 		return
 	}
 
-	err = users.DeleteUser(id)
+	err = users.DeleteUserByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("User %v not found", id)})
 		return
@@ -139,7 +135,7 @@ func handleLogin(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.CreateToken(user.ID, user.Name)
+	token, err := auth.CreateToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -6,6 +6,9 @@ type Greeter func(string) string
 var (
 	// Greeters is the set of all available Greeter instances
 	Greeters map[string]Greeter
+
+	// DefaultLanguage language to use if none is 
+	DefaultLanguage = "en"
 )
 
 func init() {

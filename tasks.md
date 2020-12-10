@@ -4,7 +4,7 @@
   - Needs too much work on the UI side
 - (DONE) Fix UI to use the new tokens/rest endpoints
 - Use DB for users in login service
-- Use GIN for the REST layer
+- (DONE) Use GIN for the REST layer
 - Extract the jwt auth as a shared module
 - Store jwt tokens in a cookie
   - Will change how /greet works
@@ -12,7 +12,18 @@
     - How to communicate back to the browser the cookie is invalid?
 - Add "favorite language" to greeter
 - (DONE) Add "delete user" and "get user details" to login service
-  - Add messaging communication to greeter to sync state
+- Add messaging communication to greeter to sync state
+  - Portable protocol: AMQP (supported by AWS and Azure services)
+  - Quick solution:
+    - KubeMQ?
+    - Redis?
+  - Event Log (e.g. Kafka)
+    - Likely not needed
+  - *Q*: Guarantee that events are not missed
+    - When is a pub/sub topic cleared of stored events? (so that a service can re-boot and re-consume them)
+    - Perhaps Kafka is needed after all?
 - Add UI for login service to list and delete users
 - Add readiness probes
   - Ready once Redis is available
+- Add some debug logs: Gin logs the requests, but there's need of more
+  - How to mix the Gin logs which are structured in a particular way with my logs?

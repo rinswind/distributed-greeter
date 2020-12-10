@@ -1,8 +1,12 @@
 package users
 
 import (
+	"context"
 	"fmt"
+	"os"
 	"sync"
+
+	"github.com/go-redis/redis/v8"
 )
 
 // User models a user
@@ -12,18 +16,30 @@ type User struct {
 	Pass string
 }
 
+const (
+	usersChannel = "/users"
+)
+
 var (
-	lock   *sync.Mutex
-	nextID uint64
-	byName map[string]*User
-	byID   map[uint64]*User
+	lock   *sync.Mutex      = &sync.Mutex{}
+	nextID uint64           = 0
+	byName map[string]*User = make(map[string]*User)
+	byID   map[uint64]*User = make(map[uint64]*User)
+
+	redisCtx    = context.Background()
+	redisClient *redis.Client
 )
 
 func init() {
-	lock = &sync.Mutex{}
-	nextID = 0
-	byName = make(map[string]*User)
-	byID = make(map[uint64]*User)
+	// Init Redis client
+	dsn := os.Getenv("REDIS_DSN")
+	redisClient = redis.NewClient(&redis.Options{
+		Addr: dsn, //redis port
+	})
+	_, err := redisClient.Ping(redisCtx).Result()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // CreateUser adds a new user
@@ -36,6 +52,16 @@ func CreateUser(name, pass string) (uint64, error) {
 	}
 
 	user := &User{ID: nextID, Name: name, Pass: pass}
+
+	// Notify everyone first
+	// TODO Instead post a task to a work queue to retry the delivery until success
+	userEvent := Event{Type: int(Created), ID: user.ID, Name: user.Name}
+	err := redisClient.Publish(redisCtx, usersChannel, userEvent.Marshal()).Err()
+	if err != nil {
+		return 0, fmt.Errorf("Failed to publish user creation event: %v", err)
+	}
+
+	// One everyone knows modify the local persistence, which can't fail at present
 	byName[name] = user
 	byID[user.ID] = user
 
@@ -82,8 +108,8 @@ func ListUserIDs() *[]uint64 {
 	return &ids
 }
 
-// DeleteUser deletes a used by ID
-func DeleteUser(id uint64) error {
+// DeleteUserByID deletes a used by ID
+func DeleteUserByID(id uint64) error {
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -92,6 +118,15 @@ func DeleteUser(id uint64) error {
 		return fmt.Errorf("User %v not available", id)
 	}
 
+	// Notify everyone first
+	// TODO Instead post a task to a work queue to retry the delivery until success
+	userEvent := Event{Type: int(Deleted), ID: user.ID, Name: user.Name}
+	err := redisClient.Publish(redisCtx, usersChannel, userEvent.Marshal()).Err()
+	if err != nil {
+		return fmt.Errorf("Failed to publish user deletion event: %v", err)
+	}
+
+	// One everyone knows modify the local persistence, which can't fail at present
 	delete(byID, id)
 	delete(byName, user.Name)
 	return nil

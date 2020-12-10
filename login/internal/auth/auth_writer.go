@@ -65,7 +65,7 @@ func init() {
 }
 
 // CreateToken makes a new token for a given user
-func CreateToken(userID uint64, userName string) (*TokenDetails, error) {
+func CreateToken(userID uint64) (*TokenDetails, error) {
 	td := &TokenDetails{}
 
 	var err error
@@ -77,7 +77,6 @@ func CreateToken(userID uint64, userName string) (*TokenDetails, error) {
 	atClaims := jwt.MapClaims{}
 	atClaims["access_uuid"] = td.AccessUUID
 	atClaims["user_id"] = userID
-	atClaims["user_name"] = userName
 	atClaims["exp"] = td.AccessExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	td.AccessToken, err = at.SignedString([]byte(atSecret))
