@@ -64,7 +64,7 @@ ENTRYPOINT [ "dlv", \
     "--log", \
     "--log-output=debugger,debuglineerr", \ 
     "exec", \
-    "--continue", \ 
+    "--continue", \
     "/usr/bin/app"]
 
 EXPOSE 8080
