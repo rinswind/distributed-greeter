@@ -1,0 +1,65 @@
+#
+# Builder
+#
+FROM golang:alpine as debug-builder
+
+# Git is required for fetching the dependencies.
+RUN apk update && \
+    apk add --no-cache git ca-certificates tzdata && \
+    update-ca-certificates
+
+# Create appuser
+ENV USER=appuser
+ENV UID=10001
+
+RUN adduser \    
+    --disabled-password \    
+    --gecos "" \    
+    --home "/nonexistent" \    
+    --shell "/sbin/nologin" \
+    --no-create-home \    
+    --uid "${UID}" \    
+    "${USER}"
+
+RUN CGO_ENABLED=0 go get -ldflags '-s -w -extldflags=-static' github.com/go-delve/delve/cmd/dlv
+
+# 
+# Runtime
+#
+# Base on something with a basic shell (statically compiled against musl)
+FROM busybox:musl
+
+# Import from builder
+COPY --from=debug-builder /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=debug-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=debug-builder /go/bin/dlv /usr/bin/dlv
+ONBUILD COPY --from=builder /app/app /usr/bin/app
+
+# Create unprivileged appuser
+ENV USER="appuser" \
+    UID="10001"
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+# Use an unprivileged user.
+USER appuser:appuser
+
+#  "--log-output=debugger,debuglineerr,gdbwire,lldbout,rpc", \
+ENTRYPOINT [ "dlv", \
+    "--listen=:40000", \
+    "--api-version=2", \
+    "--accept-multiclient", \ 
+    "--headless", \
+    "--log", \
+    "--log-output=debugger,debuglineerr", \ 
+    "exec", \
+    "--continue", \
+    "/usr/bin/app"]
+
+EXPOSE 40000

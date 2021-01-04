@@ -1,0 +1,5 @@
+#!/bin/sh
+
+docker build -t example-services/base:latest -f ./Dockerfile.base .
+docker build -t example-services/base-debug:latest -f ./Dockerfile.base.debug .
+docker build -t example-services/builder:latest -f ./Dockerfile.builder .
