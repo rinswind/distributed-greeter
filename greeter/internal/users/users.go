@@ -104,8 +104,7 @@ func UpdateUser(newUser *User) error {
 	lock.Lock()
 	defer lock.Unlock()
 
-	_, ok := byID[newUser.ID]
-	if ok {
+	if _, ok := byID[newUser.ID]; !ok {
 		return fmt.Errorf("User %v not available", newUser.ID)
 	}
 

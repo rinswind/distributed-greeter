@@ -22,6 +22,8 @@
   - *Q*: Guarantee that events are not missed
     - When is a pub/sub topic cleared of stored events? (so that a service can re-boot and re-consume them)
     - Perhaps Kafka is needed after all?
+- Add persistence DB's to the greeter and login
+  - SQL + transactions
 - Add UI for login service to list and delete users
 - Add readiness probes
   - Ready once Redis is available

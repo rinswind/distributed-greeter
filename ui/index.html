@@ -11,13 +11,27 @@
 
 </head>
 <body>
-<h1>Hello Microservices</h1>
-<button id="greetPopup">Greet</button>
-<button id="loginPopup">Login</button>
-<button id="logoutPopup">Logout</button>
-<button id="registerPopup">Register</button>
+<table>
+<tr><th colspan="2">Greeter</th></tr>
+<tr>
+    <td><button id="greetPopup">Greet</button></td>
+    <td><button id="prefsPopup">Preferences</button></td>
+</tr>    
+</table>
+<br/>
+<table>
+<tr><th colspan="2">Login</th></tr>
+<tr>
+    <td><button id="loginPopup">Login</button></td>
+    <td><button id="logoutPopup">Logout</button></td>
+</tr>
+<tr>
+    <td><button id="registerPopup">Create Account</button></td>
+    <td><button id="unregisterPopup">Delete Account</button></td>
+</tr>
+</table>
 
-<!-- Modal login dialog -->
+<!-- Login dialog -->
 <div id="loginModal" class="modal">
     <form id="loginBox" class="modal-content" action="#">
         <h2>Login</h2>
@@ -35,7 +49,7 @@
     </form>
 </div>
 
-<!-- Modal logout dialog -->
+<!-- Logout dialog -->
 <div id="logoutModal" class="modal">
     <form id="logoutBox" class="modal-content" action="#">
         <h2>Logout</h2>
@@ -47,7 +61,7 @@
     </form>
 </div>
 
-<!-- Modal login registration dialog -->
+<!-- User registration dialog -->
 <div id="registerModal" class="modal">
     <form id="registerBox" class="modal-content" action="#">
         <h2>Register</h2>
@@ -67,7 +81,25 @@
     </form>
 </div>
 
-<!-- Modal greeting dialog -->
+<!-- User preferences dialog -->
+<div id="prefsModal" class="modal">
+    <form id="prefsBox" class="modal-content" action="#">
+        <h2>Preferences</h2>
+
+        <label id="prefsMessage">None</label>
+        <br />
+              
+        <label>Language</label>
+        <select id="prefsLanguages">
+        </select>
+        <br/>
+                
+        <input type="submit" id="prefsSubmit" value="Save" />
+        <input type="button" id="prefsClose" value="Close" />
+    </form>
+</div>
+
+<!-- Greeting dialog -->
 <div id="greetModal" class="modal">
     <form id="greetBox" class="modal-content" action="#">
         <h2>Greeting</h2>
@@ -75,11 +107,6 @@
         <label id="greetMessage">None</label>
         <br/>
         
-        <label>Language</label>
-        <select id="greetLanguages">
-        </select>
-        <br/>
-                
         <input type="submit" id="greetSubmit" value="Greet" />
         <input type="button" id="greetClose" value="Close" />
     </form>
