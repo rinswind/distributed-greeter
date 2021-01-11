@@ -12,19 +12,10 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var (
-	redisCtx    = context.Background()
-	redisClient *redis.Client
-
-	atSecret string
-	atExpiry time.Duration
-
-	rtSecret string
-	rtExpiry time.Duration
-)
-
 // TokenDetails represents info
 type TokenDetails struct {
+	userID uint64
+
 	// Access token
 	AccessToken   string
 	AccessUUID    string
@@ -35,6 +26,17 @@ type TokenDetails struct {
 	RefreshUUID    string
 	RefreshExpires int64
 }
+
+var (
+	redisCtx    = context.Background()
+	redisClient *redis.Client
+
+	atSecret string
+	atExpiry time.Duration
+
+	rtSecret string
+	rtExpiry time.Duration
+)
 
 func init() {
 	// Init Redis client
@@ -66,7 +68,7 @@ func init() {
 
 // CreateToken makes a new token for a given user
 func CreateToken(userID uint64) (*TokenDetails, error) {
-	td := &TokenDetails{}
+	td := &TokenDetails{userID: userID}
 
 	var err error
 
@@ -102,12 +104,12 @@ func CreateToken(userID uint64) (*TokenDetails, error) {
 }
 
 // CreateAuth records the login details
-func CreateAuth(userID uint64, td *TokenDetails) error {
+func CreateAuth(td *TokenDetails) error {
 	at := time.Unix(td.AccessExpires, 0) //converting Unix to UTC(to Time object)
 	rt := time.Unix(td.RefreshExpires, 0)
 	now := time.Now()
 
-	userIDStr := strconv.FormatUint(userID, 10)
+	userIDStr := strconv.FormatUint(td.userID, 10)
 
 	var err error
 
@@ -123,12 +125,8 @@ func CreateAuth(userID uint64, td *TokenDetails) error {
 }
 
 // DeleteAuth destroys a users's login
-func DeleteAuth(tokenStr string) (uint64, error) {
-	claims, err := decodeToken(tokenStr, atSecret)
-	if err != nil {
-		return 0, err
-	}
-
+// TODO Require the "access_uuid" instead? This API models Authentication not as a JWT token, but rather as a map of claims
+func DeleteAuth(claims map[string]interface{}) (uint64, error) {
 	atUUID, ok := claims["access_uuid"].(string)
 	if !ok {
 		return 0, fmt.Errorf("No %v claim in token", "access_uuid")
@@ -139,6 +137,26 @@ func DeleteAuth(tokenStr string) (uint64, error) {
 		return 0, err
 	}
 	return userID, nil
+}
+
+// DecodeToken obtains a cached user login
+func DecodeToken(tokenStr string) (map[string]interface{}, error) {
+	claims, err := decodeToken(tokenStr, atSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	atUUID, ok := claims["access_uuid"].(string)
+	if !ok {
+		return nil, fmt.Errorf("No %v claim in token", "access_uuid")
+	}
+
+	err = redisClient.Get(redisCtx, atUUID).Err()
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
 }
 
 func decodeToken(encoded string, key string) (map[string]interface{}, error) {
