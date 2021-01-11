@@ -21,7 +21,7 @@ RUN adduser \
     --uid "${UID}" \    
     "${USER}"
 
-RUN CGO_ENABLED=0 go get -ldflags '-s -w -extldflags=-static' github.com/go-delve/delve/cmd/dlv
+RUN GO111MODULE=on CGO_ENABLED=0 go get -ldflags '-s -w -extldflags=-static' github.com/go-delve/delve/cmd/dlv@v1.5.1
 
 # 
 # Runtime
