@@ -12,15 +12,18 @@
 </head>
 <body>
 <table>
-<tr><th colspan="2">Greeter</th></tr>
+<caption>Greeter</caption>
+<tbody>
 <tr>
     <td><button id="greetPopup">Greet</button></td>
     <td><button id="prefsPopup">Preferences</button></td>
-</tr>    
+</tr>
+</tbody>  
 </table>
 <br/>
 <table>
-<tr><th colspan="2">Login</th></tr>
+<caption>Login</caption>
+<tbody>
 <tr>
     <td><button id="loginPopup">Login</button></td>
     <td><button id="logoutPopup">Logout</button></td>
@@ -29,6 +32,7 @@
     <td><button id="registerPopup">Create Account</button></td>
     <td><button id="unregisterPopup">Delete Account</button></td>
 </tr>
+</tbody>
 </table>
 
 <!-- Login dialog -->
@@ -56,15 +60,16 @@
         
         <label id="logoutMessage">None</label>
         <br />
-                
+
+        <input type="submit" id="logoutSubmit" value="Logout" />
         <input type="button" id="logoutClose" value="Close" />
     </form>
 </div>
 
-<!-- User registration dialog -->
+<!-- Create account dialog -->
 <div id="registerModal" class="modal">
     <form id="registerBox" class="modal-content" action="#">
-        <h2>Register</h2>
+        <h2>Create Account</h2>
         
         <label id="registerMessage">None</label>
         <br />
@@ -78,6 +83,19 @@
         
         <input type="submit" id="registerSubmit" value="Register" />
         <input type="button" id="registerClose" value="Close" />
+    </form>
+</div>
+
+<!-- Delete account dialog -->
+<div id="unregisterModal" class="modal">
+    <form id="unregisterBox" class="modal-content" action="#">
+        <h2>Delete Account</h2>
+        
+        <label id="unregisterMessage">None</label>
+        <br />
+              
+        <input type="submit" id="unregisterSubmit" value="Delete" />
+        <input type="button" id="unregisterClose" value="Close" />
     </form>
 </div>
 

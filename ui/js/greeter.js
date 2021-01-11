@@ -25,7 +25,6 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             url: toAppPath("auth/login"),
-            dataType: "json",
             contentType: "application/json",
             data: JSON.stringify({
                 user_name: user,
@@ -54,26 +53,31 @@ $(document).ready(function() {
         if (typeof window.jwt === "undefined") {
             $("#logoutMessage").text("Not logged in");
         } else {
-            $.ajax({
-                type: "POST",
-                url: toAppPath("auth/logout"),
-                dataType: "json",
-                contentType: "application/json",
-                data: JSON.stringify({
-                    access_token: window.jwt
-                })
-            }).fail(function(resp) {
-                $("#loginMessage").text("Logout failure: " + resp.status);
-                delete window.jwt
-            }).done(function(resp) {
-                $("#loginMessage").text("Logout success");
-                delete window.jwt
-            });
-            
-            //$("#logoutMessage").text("Logged out");
+            $("#logoutMessage").text("Logged in");
         }
 
         $("#logoutModal").css("display", "block");
+    });
+
+    $("#logoutBox").submit(function(event) {
+        if (typeof window.jwt === "undefined") {
+            return
+        }
+
+        $.ajax({
+            type: "POST",
+            url: toAppPath("auth/logout"),
+            headers: {
+                "Authorization": "Bearer " + btoa(window.jwt)
+            },
+            data: ""
+        }).fail(function(resp) {
+            $("#logoutMessage").text("Logout failure: " + resp.status);
+        }).done(function(resp) {
+            $("#logoutMessage").text("Logout success");
+        }).always(function() {
+            delete window.jwt
+        });
     });
 
     $("#logoutClose").click(function(event) {
@@ -82,7 +86,7 @@ $(document).ready(function() {
     });
 });
 
-// Registration
+// Create Account
 $(document).ready(function() {
     $("#registerPopup").click(function(event) {
         event.preventDefault();
@@ -98,6 +102,11 @@ $(document).ready(function() {
 
     $("#registerBox").submit(function(event) {
         event.preventDefault();
+
+        if (!(typeof window.jwt === "undefined")) {
+            $("#registerMessage").text("Logout first");
+            return
+        }
 
         var user = $("#registerUser").val();
         var password = $("#registerPassword").val();
@@ -129,27 +138,68 @@ $(document).ready(function() {
     });
 });
 
-// Preferences
+// Delete Account
 $(document).ready(function() {
-    $("#prefsPopup").click(function (event) {
+    $("#unregisterPopup").click(function(event) {
+        event.preventDefault();
+
+        $.ajax({
+            type: "GET",
+            url: toAppPath("auth/users/current"),
+            headers: {
+                "Authorization": "Bearer " + btoa(window.jwt)
+            }
+        }).fail(function(resp) {
+            $("#unregisterMessage").text("Failed to retrieve user info: " + resp.status);
+        }).done(function(resp) {
+            window.user_id = resp.user_id;
+            window.user_name = resp.user_name;
+            $("#unregisterMessage").text("Retrieved user info: " + resp.user_name + ", " + resp.user_id);
+        }).always(function() {
+            $("#unregisterModal").css("display", "block");
+        });
+    });
+
+    $("#unregisterBox").submit(function(event) {
+        event.preventDefault();
+
+        $.ajax({
+            type: "DELETE",
+            url: toAppPath("auth/users/" + window.user_id),
+            headers: {
+                "Authorization": "Bearer " + btoa(window.jwt)
+            }
+        }).fail(function(resp) {
+            $("#unregisterMessage").text("Delete account failure: " + resp.status);
+        }).done(function(resp) {
+            $("#unregisterMessage").text("Deleted account");
+        }).always(function() {
+            delete window.jwt
+        });
+
+        // TODO chain a logout call to this request
+    });
+
+    $("#unregisterClose").click(function(event) {
+        event.preventDefault();
+        $("#unregisterModal").css("display", "none");
+    });
+});
+
+// Greeting Preferences
+$(document).ready(function() {
+    $("#prefsPopup").click(function(event) {
         event.preventDefault();
 
         // Clear the current prefs content
-        if (typeof window.jwt === "undefined") {
-            $("#prefsMessage").text("Not logged in");
-        } else {
-            $("#prefsMessage").text("Logged in");
-        }
         $("#prefsLanguages").find("option").remove();
 
         $.ajax({
             type: "GET",
             url: toAppPath("messages/greetings"),
-            dataType: "json",
             headers: {
                 "Authorization": "Bearer " + btoa(window.jwt)
-            },
-            data: ""
+            }
         }).fail(function(resp) {
             $("#prefsLanguages").append(
                 $("<option></option>")
@@ -175,7 +225,7 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             url: toAppPath("messages/user"),
-            dataType: "json",
+            contentType: "application/json",
             headers: {
                 "Authorization": "Bearer " + btoa(window.jwt)
             },
@@ -197,7 +247,7 @@ $(document).ready(function() {
 
 // Greeting
 $(document).ready(function() {
-    $("#greetPopup").click(function (event) {
+    $("#greetPopup").click(function(event) {
         event.preventDefault();
 
         // Clear the current greeter UI content
@@ -209,11 +259,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             url: toAppPath("messages/user"),
-            dataType: "json",
             headers: {
                 "Authorization": "Bearer " + btoa(window.jwt)
-            },
-            data: ""
+            }
         }).fail(function(resp) {
             $("#greetMessage").text("Failed to retrieve preferences: " + resp.status);
         }).done(function(resp) {
@@ -225,17 +273,15 @@ $(document).ready(function() {
         });
     });
 
-    $("#greetBox").submit(function (event) {
+    $("#greetBox").submit(function(event) {
         event.preventDefault();
 
         $.ajax({
             type: "GET",
             url: toAppPath("messages/greetings/" + window.user_language),
-            dataType: "json",
             headers: {
                 "Authorization": "Bearer " + btoa(window.jwt)
-            },
-            data: ""
+            }
         }).fail(function(resp) {
             $("#greetMessage").text("Greeting Failure: " + resp.status);
         }).done(function(resp) {
