@@ -15,15 +15,16 @@ var (
 )
 
 func init() {
-	router.POST("/users", handleCreateUser)
-	router.GET("/users", handleListUsers)
+	authHandler := gin.HandlerFunc(auth.Handler)
 
-	router.GET("/users/:id", handleUserInfo)
-	router.DELETE("/users/:id", handleUserDelete)
+	router.POST("/users", handleCreateUser)
+	router.GET("/users", authHandler, handleListUsers)
+
+	router.GET("/users/:id", authHandler, handleUserInfo)
+	router.DELETE("/users/:id", authHandler, handleUserDelete)
 
 	router.POST("/login", handleLogin)
-
-	router.POST("/logout", handleLogout)
+	router.POST("/logout", authHandler, handleLogout)
 }
 
 // Run starts the rest endpoint
@@ -59,6 +60,21 @@ func handleCreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, &userInfo)
 }
 
+// DELETE /users
+func handleDeleteUser(c *gin.Context) {
+	authCtx, _ := c.Get(auth.ContextKey)
+	authClaims := authCtx.(map[string]interface{})
+	userID, _ := authClaims["user_id"].(uint64)
+
+	err := users.DeleteUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 // GET /users
 func handleListUsers(c *gin.Context) {
 	type UsersInfo struct {
@@ -72,10 +88,21 @@ func handleListUsers(c *gin.Context) {
 // GET /users/:id
 func handleUserInfo(c *gin.Context) {
 	idParam := c.Param("id")
-	id, err := strconv.ParseUint(idParam, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", idParam)})
-		return
+
+	var id uint64
+	var err error
+
+	if idParam == "current" {
+		authCtx, _ := c.Get(auth.ContextKey)
+		authClaims := authCtx.(map[string]interface{})
+
+		id = uint64(authClaims["user_id"].(float64))
+	} else {
+		id, err = strconv.ParseUint(idParam, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", idParam)})
+			return
+		}
 	}
 
 	user, err := users.GetUserByID(id)
@@ -141,7 +168,7 @@ func handleLogin(c *gin.Context) {
 		return
 	}
 
-	err = auth.CreateAuth(user.ID, token)
+	err = auth.CreateAuth(token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -158,17 +185,10 @@ func handleLogin(c *gin.Context) {
 
 // POST /logout
 func handleLogout(c *gin.Context) {
-	type TokenInfo struct {
-		AccessToken string `json:"access_token"`
-	}
+	authCtx, _ := c.Get(auth.ContextKey)
+	authClaims := authCtx.(map[string]interface{})
 
-	var tokenInfo TokenInfo
-	if err := c.ShouldBindJSON(&tokenInfo); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	if _, err := auth.DeleteAuth(tokenInfo.AccessToken); err != nil {
+	if _, err := auth.DeleteAuth(authClaims); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
