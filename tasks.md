@@ -3,14 +3,13 @@
 - (POSTPONED) Use refresh tokens
   - Needs too much work on the UI side
 - (DONE) Fix UI to use the new tokens/rest endpoints
-- Use DB for users in login service
 - (DONE) Use GIN for the REST layer
 - Extract the jwt auth as a shared module
 - Store jwt tokens in a cookie
   - Will change how /greet works
   - Will change how /login, /logout works
     - How to communicate back to the browser the cookie is invalid?
-- Add "favorite language" to greeter
+- (DONE) Add "favorite language" to greeter
 - (DONE) Add "delete user" and "get user details" to login service
 - Add messaging communication to greeter to sync state
   - Portable protocol: AMQP (supported by AWS and Azure services)
@@ -24,8 +23,12 @@
     - Perhaps Kafka is needed after all?
 - Add persistence DB's to the greeter and login
   - SQL + transactions
-- Add UI for login service to list and delete users
+- (DONE) Add UI for login service to delete the user account
 - Add readiness probes
   - Ready once Redis is available
-- Add some debug logs: Gin logs the requests, but there's need of more
-  - How to mix the Gin logs which are structured in a particular way with my logs?
+- Add some debug logs:
+  - Gin logs the requests, but there's need for more
+  - *Q*: How to mix the Gin logs which are structured in a particular way with my logs?
+- Fine grained handling of JWT token parsing errors
+  - E.g. expired tokens must not fail a call to `/logout`
+  - *Note*: A chance to learn modern-day error handling in Go
