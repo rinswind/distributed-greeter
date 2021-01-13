@@ -3,10 +3,13 @@ package users
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/go-redis/redis/v8"
+)
+
+const (
+	usersChannel = "/users"
 )
 
 // User models a user
@@ -16,65 +19,59 @@ type User struct {
 	Pass string
 }
 
-const (
-	usersChannel = "/users"
-)
+// Store is a User store
+type Store struct {
+	redis  *redis.Client
+	lock   *sync.Mutex
+	nextID uint64
+	byName map[string]*User
+	byID   map[uint64]*User
+}
 
-var (
-	lock   *sync.Mutex      = &sync.Mutex{}
-	nextID uint64           = 0
-	byName map[string]*User = make(map[string]*User)
-	byID   map[uint64]*User = make(map[uint64]*User)
-
-	redisCtx    = context.Background()
-	redisClient *redis.Client
-)
-
-func init() {
-	// Init Redis client
-	dsn := os.Getenv("REDIS_DSN")
-	redisClient = redis.NewClient(&redis.Options{
-		Addr: dsn, //redis port
-	})
-	_, err := redisClient.Ping(redisCtx).Result()
-	if err != nil {
-		panic(err)
+// Make creates a Store client
+func Make(redis *redis.Client) *Store {
+	return &Store{
+		redis:  redis,
+		lock:   &sync.Mutex{},
+		nextID: 0,
+		byName: make(map[string]*User),
+		byID:   make(map[uint64]*User),
 	}
 }
 
 // CreateUser adds a new user
-func CreateUser(name, pass string) (uint64, error) {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) CreateUser(name, pass string) (uint64, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if _, ok := byName[name]; ok {
+	if _, ok := s.byName[name]; ok {
 		return 0, fmt.Errorf("User %v not available", name)
 	}
 
-	user := &User{ID: nextID, Name: name, Pass: pass}
+	user := &User{ID: s.nextID, Name: name, Pass: pass}
 
 	// Notify everyone first
 	// TODO Instead post a task to a work queue to retry the delivery until success
 	userEvent := Event{Type: int(Created), ID: user.ID, Name: user.Name}
-	err := redisClient.Publish(redisCtx, usersChannel, userEvent.Marshal()).Err()
+	err := s.redis.Publish(context.Background(), usersChannel, userEvent.Marshal()).Err()
 	if err != nil {
 		return 0, fmt.Errorf("Failed to publish user creation event: %v", err)
 	}
 
 	// One everyone knows modify the local persistence, which can't fail at present
-	byName[name] = user
-	byID[user.ID] = user
+	s.byName[name] = user
+	s.byID[user.ID] = user
 
-	nextID++
+	s.nextID++
 	return user.ID, nil
 }
 
 // GetUserByName finds a user
-func GetUserByName(name string) (*User, error) {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) GetUserByName(name string) (*User, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	user, ok := byName[name]
+	user, ok := s.byName[name]
 	if !ok {
 		return nil, fmt.Errorf("User %v not available", name)
 	}
@@ -82,11 +79,11 @@ func GetUserByName(name string) (*User, error) {
 }
 
 // GetUserByID finds a user
-func GetUserByID(id uint64) (*User, error) {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) GetUserByID(id uint64) (*User, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	user, ok := byID[id]
+	user, ok := s.byID[id]
 	if !ok {
 		return nil, fmt.Errorf("User %v not available", id)
 	}
@@ -94,13 +91,13 @@ func GetUserByID(id uint64) (*User, error) {
 }
 
 // ListUserIDs lists all user IDs
-func ListUserIDs() *[]uint64 {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) ListUserIDs() *[]uint64 {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	ids := make([]uint64, len(byID))
+	ids := make([]uint64, len(s.byID))
 	i := 0
-	for id := range byID {
+	for id := range s.byID {
 		ids[i] = id
 		i++
 	}
@@ -109,11 +106,11 @@ func ListUserIDs() *[]uint64 {
 }
 
 // DeleteUserByID deletes a used by ID
-func DeleteUserByID(id uint64) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) DeleteUserByID(id uint64) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	user, ok := byID[id]
+	user, ok := s.byID[id]
 	if !ok {
 		return fmt.Errorf("User %v not available", id)
 	}
@@ -121,13 +118,13 @@ func DeleteUserByID(id uint64) error {
 	// Notify everyone first
 	// TODO Instead post a task to a work queue to retry the delivery until success
 	userEvent := Event{Type: int(Deleted), ID: user.ID, Name: user.Name}
-	err := redisClient.Publish(redisCtx, usersChannel, userEvent.Marshal()).Err()
+	err := s.redis.Publish(context.Background(), usersChannel, userEvent.Marshal()).Err()
 	if err != nil {
 		return fmt.Errorf("Failed to publish user deletion event: %v", err)
 	}
 
 	// One everyone knows modify the local persistence, which can't fail at present
-	delete(byID, id)
-	delete(byName, user.Name)
+	delete(s.byID, id)
+	delete(s.byName, user.Name)
 	return nil
 }

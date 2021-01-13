@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 
-	"example.org/services/greeter/internal/messages"
 	"github.com/go-redis/redis/v8"
+	"github.com/rinswind/distributed-greeter/greeter/internal/messages"
+)
+
+const (
+	usersChannel = "/users"
 )
 
 // User models a user
@@ -18,34 +21,28 @@ type User struct {
 	Language string
 }
 
-const (
-	usersChannel = "/users"
-)
+// Store is a user preferences store
+type Store struct {
+	redis *redis.Client
+	lock  *sync.Mutex
+	byID  map[uint64]*User
+}
 
-var (
-	lock *sync.Mutex      = &sync.Mutex{}
-	byID map[uint64]*User = make(map[uint64]*User)
-
-	redisCtx    = context.Background()
-	redisClient *redis.Client
-)
-
-func init() {
-	// Init Redis client
-	dsn := os.Getenv("REDIS_DSN")
-	redisClient = redis.NewClient(&redis.Options{
-		Addr: dsn, //redis port
-	})
-	_, err := redisClient.Ping(redisCtx).Result()
-	if err != nil {
-		panic(err)
+// Make create a new Store
+func Make(redis *redis.Client) *Store {
+	return &Store{
+		redis: redis,
+		lock:  &sync.Mutex{},
+		byID:  make(map[uint64]*User),
 	}
+}
 
-	// Start listening for user events
-	userEvents := redisClient.Subscribe(redisCtx, usersChannel)
-	_, err = userEvents.Receive(redisCtx)
+// Listen starts listening for User events
+func (s *Store) Listen() error {
+	userEvents := s.redis.Subscribe(context.Background(), usersChannel)
+	_, err := userEvents.Receive(context.Background())
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	go func() {
@@ -61,9 +58,9 @@ func init() {
 
 			switch event.Type {
 			case int(Created):
-				err = CreateUser(event.ID, event.Name, messages.DefaultLanguage)
+				err = s.CreateUser(event.ID, event.Name, messages.DefaultLanguage)
 			case int(Deleted):
-				err = DeleteUser(event.ID)
+				err = s.DeleteUser(event.ID)
 			}
 
 			if err != nil {
@@ -71,28 +68,30 @@ func init() {
 			}
 		}
 	}()
+
+	return nil
 }
 
 // CreateUser adds a new user
-func CreateUser(id uint64, name string, lang string) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) CreateUser(id uint64, name string, lang string) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if _, ok := byID[id]; ok {
+	if _, ok := s.byID[id]; ok {
 		return fmt.Errorf("User %v not available", id)
 	}
 
 	user := &User{ID: id, Name: name, Language: lang}
-	byID[user.ID] = user
+	s.byID[user.ID] = user
 	return nil
 }
 
 // GetUser finds a user
-func GetUser(id uint64) (*User, error) {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) GetUser(id uint64) (*User, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	user, ok := byID[id]
+	user, ok := s.byID[id]
 	if !ok {
 		return nil, fmt.Errorf("User %v not available", id)
 	}
@@ -100,27 +99,27 @@ func GetUser(id uint64) (*User, error) {
 }
 
 // UpdateUser updates a user record
-func UpdateUser(newUser *User) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) UpdateUser(newUser *User) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if _, ok := byID[newUser.ID]; !ok {
+	if _, ok := s.byID[newUser.ID]; !ok {
 		return fmt.Errorf("User %v not available", newUser.ID)
 	}
 
-	byID[newUser.ID] = newUser
+	s.byID[newUser.ID] = newUser
 	return nil
 }
 
 // DeleteUser deletes a used by ID
-func DeleteUser(id uint64) error {
-	lock.Lock()
-	defer lock.Unlock()
+func (s *Store) DeleteUser(id uint64) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
-	if _, ok := byID[id]; !ok {
+	if _, ok := s.byID[id]; !ok {
 		return fmt.Errorf("User %v not available", id)
 	}
 
-	delete(byID, id)
+	delete(s.byID, id)
 	return nil
 }

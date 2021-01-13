@@ -5,35 +5,39 @@ import (
 	"net/http"
 	"strconv"
 
-	"example.org/services/login/internal/auth"
-	"example.org/services/login/internal/users"
 	"github.com/gin-gonic/gin"
+	ginauth "github.com/rinswind/auth-go/gin"
+	"github.com/rinswind/auth-go/tokens"
+	"github.com/rinswind/distributed-greeter/login/internal/users"
 )
 
-var (
-	router = gin.Default()
-)
-
-func init() {
-	authHandler := gin.HandlerFunc(auth.Handler)
-
-	router.POST("/users", handleCreateUser)
-	router.GET("/users", authHandler, handleListUsers)
-
-	router.GET("/users/:id", authHandler, handleUserInfo)
-	router.DELETE("/users/:id", authHandler, handleUserDelete)
-
-	router.POST("/login", handleLogin)
-	router.POST("/logout", authHandler, handleLogout)
+// LoginEndpoint is the REST endpoint for the login service
+type LoginEndpoint struct {
+	Iface      string
+	AuthReader *tokens.AuthReader
+	AuthWriter *tokens.AuthWriter
+	Users      *users.Store
 }
 
 // Run starts the rest endpoint
-func Run(iface string) {
-	router.Run(iface)
+func (le *LoginEndpoint) Run() {
+	router := gin.Default()
+
+	authHandler := ginauth.MakeHandler(le.AuthReader)
+
+	router.POST("/users", le.handleCreateUser)
+	router.GET("/users", authHandler, le.handleListUsers)
+
+	router.GET("/users/:id", authHandler, le.handleUserInfo)
+	router.DELETE("/users/:id", authHandler, le.handleUserDelete)
+
+	router.POST("/login", le.handleLogin)
+	router.POST("/logout", authHandler, le.handleLogout)
+	router.Run(le.Iface)
 }
 
 // POST /users
-func handleCreateUser(c *gin.Context) {
+func (le *LoginEndpoint) handleCreateUser(c *gin.Context) {
 	type UserCreds struct {
 		Name     string `json:"user_name"`
 		Password string `json:"user_password"`
@@ -45,7 +49,7 @@ func handleCreateUser(c *gin.Context) {
 		return
 	}
 
-	userid, err := users.CreateUser(userCreds.Name, userCreds.Password)
+	userid, err := le.Users.CreateUser(userCreds.Name, userCreds.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -61,12 +65,12 @@ func handleCreateUser(c *gin.Context) {
 }
 
 // DELETE /users
-func handleDeleteUser(c *gin.Context) {
-	authCtx, _ := c.Get(auth.ContextKey)
+func (le *LoginEndpoint) handleDeleteUser(c *gin.Context) {
+	authCtx, _ := c.Get(ginauth.ContextKey)
 	authClaims := authCtx.(map[string]interface{})
 	userID, _ := authClaims["user_id"].(uint64)
 
-	err := users.DeleteUserByID(userID)
+	err := le.Users.DeleteUserByID(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -76,24 +80,24 @@ func handleDeleteUser(c *gin.Context) {
 }
 
 // GET /users
-func handleListUsers(c *gin.Context) {
+func (le *LoginEndpoint) handleListUsers(c *gin.Context) {
 	type UsersInfo struct {
 		IDs []uint64 `json:"user_ids"`
 	}
 
-	userIds := UsersInfo{IDs: *users.ListUserIDs()}
+	userIds := UsersInfo{IDs: *le.Users.ListUserIDs()}
 	c.JSON(http.StatusOK, &userIds)
 }
 
 // GET /users/:id
-func handleUserInfo(c *gin.Context) {
+func (le *LoginEndpoint) handleUserInfo(c *gin.Context) {
 	idParam := c.Param("id")
 
 	var id uint64
 	var err error
 
 	if idParam == "current" {
-		authCtx, _ := c.Get(auth.ContextKey)
+		authCtx, _ := c.Get(ginauth.ContextKey)
 		authClaims := authCtx.(map[string]interface{})
 
 		id = uint64(authClaims["user_id"].(float64))
@@ -105,7 +109,7 @@ func handleUserInfo(c *gin.Context) {
 		}
 	}
 
-	user, err := users.GetUserByID(id)
+	user, err := le.Users.GetUserByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("User %v not found", id)})
 		return
@@ -121,7 +125,7 @@ func handleUserInfo(c *gin.Context) {
 }
 
 // DELETE /users/:id
-func handleUserDelete(c *gin.Context) {
+func (le *LoginEndpoint) handleUserDelete(c *gin.Context) {
 	idParam := c.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
@@ -129,7 +133,7 @@ func handleUserDelete(c *gin.Context) {
 		return
 	}
 
-	err = users.DeleteUserByID(id)
+	err = le.Users.DeleteUserByID(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("User %v not found", id)})
 		return
@@ -139,7 +143,7 @@ func handleUserDelete(c *gin.Context) {
 }
 
 // POST /login
-func handleLogin(c *gin.Context) {
+func (le *LoginEndpoint) handleLogin(c *gin.Context) {
 	type UserCreds struct {
 		Name     string `json:"user_name"`
 		Password string `json:"user_password"`
@@ -151,7 +155,7 @@ func handleLogin(c *gin.Context) {
 		return
 	}
 
-	user, err := users.GetUserByName(userCreds.Name)
+	user, err := le.Users.GetUserByName(userCreds.Name)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Bad user or password"})
 		return
@@ -162,13 +166,13 @@ func handleLogin(c *gin.Context) {
 		return
 	}
 
-	token, err := auth.CreateToken(user.ID)
+	token, err := le.AuthWriter.CreateToken(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = auth.CreateAuth(token)
+	err = le.AuthWriter.CreateAuth(token)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -184,11 +188,11 @@ func handleLogin(c *gin.Context) {
 }
 
 // POST /logout
-func handleLogout(c *gin.Context) {
-	authCtx, _ := c.Get(auth.ContextKey)
+func (le *LoginEndpoint) handleLogout(c *gin.Context) {
+	authCtx, _ := c.Get(ginauth.ContextKey)
 	authClaims := authCtx.(map[string]interface{})
 
-	if _, err := auth.DeleteAuth(authClaims); err != nil {
+	if _, err := le.AuthWriter.DeleteAuth(authClaims); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

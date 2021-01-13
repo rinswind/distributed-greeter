@@ -1,21 +1,21 @@
 # Distributed greeter tasks
 
-- (POSTPONED) Use refresh tokens
+- **(POSTPONED)** Use refresh tokens
   - Needs too much work on the UI side
-- (DONE) Fix UI to use the new tokens/rest endpoints
-- (DONE) Use GIN for the REST layer
-- Extract the jwt auth as a shared module
+- **(DONE)** Fix UI to use the new tokens/rest endpoints
+- **(DONE)** Use GIN for the REST layer
+- **(PROGRESS)** Extract the jwt auth as a shared module
 - Store jwt tokens in a cookie
   - Will change how /greet works
   - Will change how /login, /logout works
     - How to communicate back to the browser the cookie is invalid?
-- (DONE) Add "favorite language" to greeter
-- (DONE) Add "delete user" and "get user details" to login service
+- **(DONE)** Add "favorite language" to greeter
+- **(DONE)** Add "delete user" and "get user details" to login service
 - Add messaging communication to greeter to sync state
   - Portable protocol: AMQP (supported by AWS and Azure services)
   - Quick solution:
     - KubeMQ?
-    - Redis?
+    - **(DONE)** Redis?
   - Event Log (e.g. Kafka)
     - Likely not needed
   - *Q*: Guarantee that events are not missed
@@ -23,7 +23,8 @@
     - Perhaps Kafka is needed after all?
 - Add persistence DB's to the greeter and login
   - SQL + transactions
-- (DONE) Add UI for login service to delete the user account
+  - db init containers (?)
+- **(DONE)** Add UI for login service to delete the user account
 - Add readiness probes
   - Ready once Redis is available
 - Add some debug logs:
@@ -32,3 +33,5 @@
 - Fine grained handling of JWT token parsing errors
   - E.g. expired tokens must not fail a call to `/logout`
   - *Note*: A chance to learn modern-day error handling in Go
+- Add debug mode to the heml chart: 1 replica, debug services
+- Setup a JS dev environment

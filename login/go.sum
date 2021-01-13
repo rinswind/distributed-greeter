@@ -84,6 +84,10 @@ github.com/onsi/gomega v1.10.3/go.mod h1:V9xEwhxec5O8UDM77eCW8vLymOMltsqPVYWrpDs
 github.com/peterh/liner v0.0.0-20170317030525-88609521dc4b h1:8uaXtUkxiy+T/zdLWuxa/PG4so0TPZDZfafFNNSaptE=
 github.com/peterh/liner v0.0.0-20170317030525-88609521dc4b/go.mod h1:xIteQHvHuaLYG9IFj6mSxM0fCKrs34IrEQUhOYuGPHc=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/rinswind/auth-go v0.0.1 h1:RoLdSXh+/fSHcT4H2yoVA6go+Jb/6iyrsKVidFpBnE8=
+github.com/rinswind/auth-go v0.0.1/go.mod h1:M8Av+MLvCgB3klOpVYcu/Zvi2/dqpw+bt3Tm78P4nDw=
+github.com/rinswind/auth-go v0.0.2 h1:ds8EhKEw+OmOnFCBjTDkWySdAKATY+Gg8njCtRFN9kg=
+github.com/rinswind/auth-go v0.0.2/go.mod h1:M8Av+MLvCgB3klOpVYcu/Zvi2/dqpw+bt3Tm78P4nDw=
 github.com/russross/blackfriday v1.5.2 h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
