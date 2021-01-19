@@ -1,7 +1,9 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	ginauth "github.com/rinswind/auth-go/gin"
@@ -22,10 +24,13 @@ func (ge *GreeterEndpoint) Run() {
 	router := gin.Default()
 	authHandler := ginauth.MakeHandler(ge.AuthReader)
 	router.Use(gin.HandlerFunc(authHandler))
+
+	router.GET("/users/:uid", ge.handleUserInfo)
+	router.PUT("/users/:uid", ge.handleUserUpdate)
+
 	router.GET("/greetings", handleAllGreeters)
-	router.GET("/greetings/:lang", ge.handleGreeter)
-	router.GET("/user", ge.handleUserInfo)
-	router.POST("/user", ge.handleUserUpdate)
+	router.POST("/greetings/:lang", ge.handleGreeter)
+
 	router.Run(ge.Iface)
 }
 
@@ -43,7 +48,7 @@ func handleAllGreeters(c *gin.Context) {
 	c.JSON(http.StatusOK, &langs)
 }
 
-// GET /greetings/:lang
+// POST /greetings/:lang
 func (ge *GreeterEndpoint) handleGreeter(c *gin.Context) {
 	lang := c.Param("lang")
 
@@ -68,13 +73,16 @@ func (ge *GreeterEndpoint) handleGreeter(c *gin.Context) {
 	c.JSON(http.StatusOK, &message)
 }
 
-// GET /user
+// GET /users/:uid
 func (ge *GreeterEndpoint) handleUserInfo(c *gin.Context) {
-	authCtx, _ := c.Get(ginauth.ContextKey)
-	authClaims := authCtx.(map[string]interface{})
-	userID, _ := authClaims["user_id"].(uint64)
+	uidParam := c.Param("uid")
+	uid, err := strconv.ParseUint(uidParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", uidParam)})
+		return
+	}
 
-	user, err := ge.Users.GetUser(userID)
+	user, err := ge.Users.GetUser(uid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -90,8 +98,15 @@ func (ge *GreeterEndpoint) handleUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, &userInfo)
 }
 
-// POST /user
+// PUT /users/:uid
 func (ge *GreeterEndpoint) handleUserUpdate(c *gin.Context) {
+	uidParam := c.Param("uid")
+	uid, err := strconv.ParseUint(uidParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", uidParam)})
+		return
+	}
+
 	type UserInfo struct {
 		Language string `json:"user_language"`
 	}
@@ -102,17 +117,13 @@ func (ge *GreeterEndpoint) handleUserUpdate(c *gin.Context) {
 		return
 	}
 
-	authCtx, _ := c.Get(ginauth.ContextKey)
-	authClaims := authCtx.(map[string]interface{})
-	userID, _ := authClaims["user_id"].(uint64)
-
-	user, err := ge.Users.GetUser(userID)
+	user, err := ge.Users.GetUser(uid)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
 
-	user = &users.User{ID: userID, Name: user.Name, Language: userInfo.Language}
+	user = &users.User{ID: uid, Name: user.Name, Language: userInfo.Language}
 	err = ge.Users.UpdateUser(user)
 	if err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})

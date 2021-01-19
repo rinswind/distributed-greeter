@@ -2,15 +2,27 @@ function toAppPath(relative) {
     return "/greeter/" + relative 
 }
 
+function isLoggedIn() {
+    return !(typeof window.login === "undefined")
+}
+
+$.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+    if (isLoggedIn()) {
+        options.headers = {
+            "Authorization": "Bearer " + btoa(window.login.access_token)
+        };
+    }
+})
+
 // Login
 $(document).ready(function() {
     $("#loginPopup").click(function(event) {
         event.preventDefault();
 
-        if (typeof window.jwt === "undefined") {
-            $("#loginMessage").text("Not logged in");
-        } else {
+        if (isLoggedIn()) {
             $("#loginMessage").text("Logged in");
+        } else {
+            $("#loginMessage").text("Not logged in");
         }
 
         $("#loginModal").css("display", "block");
@@ -24,7 +36,7 @@ $(document).ready(function() {
 
         $.ajax({
             type: "POST",
-            url: toAppPath("auth/login"),
+            url: toAppPath("auth/logins"),
             contentType: "application/json",
             data: JSON.stringify({
                 user_name: user,
@@ -34,7 +46,12 @@ $(document).ready(function() {
             $("#loginMessage").text("Login failure: " + resp.status);
         }).done(function(resp) {
             // Store jwt in the page root window object
-            window.jwt = resp.access_token;
+            window.login = {
+                user_id: resp.user_id,
+                login_id: resp.login_id,
+                access_token: resp.access_token,
+                refresh_token: resp.refresh_token
+            };
             $("#loginMessage").text("Login success");
         });
     });
@@ -50,33 +67,25 @@ $(document).ready(function() {
     $("#logoutPopup").click(function(event) {
         event.preventDefault();
 
-        if (typeof window.jwt === "undefined") {
-            $("#logoutMessage").text("Not logged in");
-        } else {
+        if (isLoggedIn()) {
             $("#logoutMessage").text("Logged in");
+        } else {
+            $("#logoutMessage").text("Not logged in");
         }
 
         $("#logoutModal").css("display", "block");
     });
 
     $("#logoutBox").submit(function(event) {
-        if (typeof window.jwt === "undefined") {
-            return
-        }
-
         $.ajax({
-            type: "POST",
-            url: toAppPath("auth/logout"),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            },
-            data: ""
-        }).fail(function(resp) {
+            type: "DELETE",
+            url: toAppPath("auth/logins/" + window.login.login_id),
+         }).fail(function(resp) {
             $("#logoutMessage").text("Logout failure: " + resp.status);
         }).done(function(resp) {
             $("#logoutMessage").text("Logout success");
         }).always(function() {
-            delete window.jwt
+            delete window.login
         });
     });
 
@@ -91,10 +100,10 @@ $(document).ready(function() {
     $("#registerPopup").click(function(event) {
         event.preventDefault();
 
-        if (typeof window.jwt === "undefined") {
-            $("#registerMessage").text("Not logged in");
-        } else {
+        if (isLoggedIn()) {
             $("#registerMessage").text("Logged in");
+        } else {
+            $("#registerMessage").text("Not logged in");
         }
 
         $("#registerModal").css("display", "block");
@@ -102,11 +111,6 @@ $(document).ready(function() {
 
     $("#registerBox").submit(function(event) {
         event.preventDefault();
-
-        if (!(typeof window.jwt === "undefined")) {
-            $("#registerMessage").text("Logout first");
-            return
-        }
 
         var user = $("#registerUser").val();
         var password = $("#registerPassword").val();
@@ -140,44 +144,21 @@ $(document).ready(function() {
 
 // Delete Account
 $(document).ready(function() {
-    $("#unregisterPopup").click(function(event) {
-        event.preventDefault();
-
-        $.ajax({
-            type: "GET",
-            url: toAppPath("auth/users/current"),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            }
-        }).fail(function(resp) {
-            $("#unregisterMessage").text("Failed to retrieve user info: " + resp.status);
-        }).done(function(resp) {
-            window.user_id = resp.user_id;
-            window.user_name = resp.user_name;
-            $("#unregisterMessage").text("Retrieved user info: " + resp.user_name + ", " + resp.user_id);
-        }).always(function() {
-            $("#unregisterModal").css("display", "block");
-        });
-    });
-
     $("#unregisterBox").submit(function(event) {
         event.preventDefault();
-
+        
         $.ajax({
             type: "DELETE",
-            url: toAppPath("auth/users/" + window.user_id),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            }
+            url: toAppPath("auth/users/" + window.login.user_id),
         }).fail(function(resp) {
             $("#unregisterMessage").text("Delete account failure: " + resp.status);
         }).done(function(resp) {
             $("#unregisterMessage").text("Deleted account");
         }).always(function() {
-            delete window.jwt
+            delete window.login
         });
 
-        // TODO chain a logout call to this request
+        // TODO chain a logout call to this request?
     });
 
     $("#unregisterClose").click(function(event) {
@@ -197,9 +178,6 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             url: toAppPath("messages/greetings"),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            }
         }).fail(function(resp) {
             $("#prefsLanguages").append(
                 $("<option></option>")
@@ -219,23 +197,20 @@ $(document).ready(function() {
 
     $("#prefsBox").submit(function(event) {
         event.preventDefault();
-
+            
         var language = $("#prefsLanguages").find(":selected").text();
         
         $.ajax({
-            type: "POST",
-            url: toAppPath("messages/user"),
+            type: "PUT",
+            url: toAppPath("messages/users/" + window.login.user_id),
             contentType: "application/json",
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            },
             data: JSON.stringify({
                 user_language: language
             })
         }).fail(function(resp) {
             $("#prefsMessage").text("Failed to save preferences: " + resp.status);
         }).done(function(resp) {
-            $("#prefsMessage").text("Saved preferences");
+            $("#prefsMessage").text("Saved preferences: " + resp.status);
         });
     });
 
@@ -253,21 +228,19 @@ $(document).ready(function() {
         // Clear the current greeter UI content
         $("#greetMessage").text("No greeting");
         
-        delete window.user_name;
-        delete window.user_language;
+        delete window.prefs;
 
         $.ajax({
             type: "GET",
-            url: toAppPath("messages/user"),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            }
-        }).fail(function(resp) {
+            url: toAppPath("messages/users/" + window.login.user_id),
+         }).fail(function(resp) {
             $("#greetMessage").text("Failed to retrieve preferences: " + resp.status);
         }).done(function(resp) {
-            window.user_name = resp.user_name;
-            window.user_language = resp.user_language;
-            $("#greetMessage").text("Preferences of " + resp.user_name + ": " + resp.user_language);
+            window.prefs = {
+                user_name: resp.user_name,
+                user_language: resp.user_language
+            };
+            $("#greetMessage").text("Preferences: " + JSON.stringify(window.prefs));
         }).always(function() {
             $("#greetModal").css("display", "block");
         });
@@ -277,12 +250,9 @@ $(document).ready(function() {
         event.preventDefault();
 
         $.ajax({
-            type: "GET",
-            url: toAppPath("messages/greetings/" + window.user_language),
-            headers: {
-                "Authorization": "Bearer " + btoa(window.jwt)
-            }
-        }).fail(function(resp) {
+            type: "POST",
+            url: toAppPath("messages/greetings/" + window.prefs.user_language),
+         }).fail(function(resp) {
             $("#greetMessage").text("Greeting Failure: " + resp.status);
         }).done(function(resp) {
             $("#greetMessage").text("Greeting Success: " + resp.message);

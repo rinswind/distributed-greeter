@@ -1,10 +1,18 @@
 # Distributed greeter tasks
 
+## Manuals
+
+- Basic HTTP server: https://tutorialedge.net/golang/creating-simple-web-server-with-golang/
+- REST + SQL service: https://blog.logrocket.com/how-to-build-a-rest-api-with-golang-using-gin-and-gorm/ 
+- JWT auth: https://dev.to/omnisyle/simple-jwt-authentication-for-golang-part-1-3kfo
+
+## Tasks
+
 - **(POSTPONED)** Use refresh tokens
   - Needs too much work on the UI side
 - **(DONE)** Fix UI to use the new tokens/rest endpoints
 - **(DONE)** Use GIN for the REST layer
-- **(PROGRESS)** Extract the jwt auth as a shared module
+- **(DONE)** Extract the jwt auth as a shared module
 - Store jwt tokens in a cookie
   - Will change how /greet works
   - Will change how /login, /logout works
@@ -33,5 +41,21 @@
 - Fine grained handling of JWT token parsing errors
   - E.g. expired tokens must not fail a call to `/logout`
   - *Note*: A chance to learn modern-day error handling in Go
-- Add debug mode to the heml chart: 1 replica, debug services
-- Setup a JS dev environment
+- **(PROGRESS)** Add a Helm chart
+  - **(DONE)** Customizable images/replica count
+  - Customizable ingress: annotations to select something that's not "nginx"
+  - Customizable secrets for the security token
+  - Optional deployment of redis in case one is provided by the cloud is used
+  - Optional debug services
+- Move Redis from the Helm chart into it's own chart
+- Setup a JS dev environment for the UI
+- Fix the REST API
+  - At login return: `{ token: opaque, loginId: UUID, userId: int }`
+  - To logout `DELETE /login/<UUID>`
+  - Remove `/users/current`
+  - `PUT /users/<id>` to store preferences
+  - *Q*: What happens to the refresh token?
+    - *A*: Nothing. It's not used to represent the primary login
+      - It is used to `POST /refresh`
+      - ... similarly to `POST /logins`
+      - ... to create a new resource `/logins/<UUID>`

@@ -25,14 +25,16 @@ func (le *LoginEndpoint) Run() {
 
 	authHandler := ginauth.MakeHandler(le.AuthReader)
 
+	// TODO: must secure the API call, must not secure the user ID (https?)
 	router.POST("/users", le.handleCreateUser)
-	router.GET("/users", authHandler, le.handleListUsers)
+	//router.GET("/users", authHandler, le.handleListUsers)
+	router.GET("/users/:uid", authHandler, le.handleUserInfo)
+	router.DELETE("/users/:uid", authHandler, le.handleUserDelete)
 
-	router.GET("/users/:id", authHandler, le.handleUserInfo)
-	router.DELETE("/users/:id", authHandler, le.handleUserDelete)
+	// TODO: must secure the API call, must not secure the user ID (https?)
+	router.POST("/logins", le.handleLogin)
+	router.DELETE("/logins/:uuid", authHandler, le.handleLogout)
 
-	router.POST("/login", le.handleLogin)
-	router.POST("/logout", authHandler, le.handleLogout)
 	router.Run(le.Iface)
 }
 
@@ -64,49 +66,22 @@ func (le *LoginEndpoint) handleCreateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, &userInfo)
 }
 
-// DELETE /users
-func (le *LoginEndpoint) handleDeleteUser(c *gin.Context) {
-	authCtx, _ := c.Get(ginauth.ContextKey)
-	authClaims := authCtx.(map[string]interface{})
-	userID, _ := authClaims["user_id"].(uint64)
+// // GET /users
+// func (le *LoginEndpoint) handleListUsers(c *gin.Context) {
+// 	type UsersInfo struct {
+// 		IDs []uint64 `json:"user_ids"`
+// 	}
+// 	userIds := UsersInfo{IDs: *le.Users.ListUserIDs()}
+// 	c.JSON(http.StatusOK, &userIds)
+// }
 
-	err := le.Users.DeleteUserByID(userID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
-// GET /users
-func (le *LoginEndpoint) handleListUsers(c *gin.Context) {
-	type UsersInfo struct {
-		IDs []uint64 `json:"user_ids"`
-	}
-
-	userIds := UsersInfo{IDs: *le.Users.ListUserIDs()}
-	c.JSON(http.StatusOK, &userIds)
-}
-
-// GET /users/:id
+// GET /users/:uid
 func (le *LoginEndpoint) handleUserInfo(c *gin.Context) {
-	idParam := c.Param("id")
-
-	var id uint64
-	var err error
-
-	if idParam == "current" {
-		authCtx, _ := c.Get(ginauth.ContextKey)
-		authClaims := authCtx.(map[string]interface{})
-
-		id = uint64(authClaims["user_id"].(float64))
-	} else {
-		id, err = strconv.ParseUint(idParam, 10, 64)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", idParam)})
-			return
-		}
+	idParam := c.Param("uid")
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", idParam)})
+		return
 	}
 
 	user, err := le.Users.GetUserByID(id)
@@ -124,9 +99,9 @@ func (le *LoginEndpoint) handleUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, &userInfo)
 }
 
-// DELETE /users/:id
+// DELETE /users/:uid
 func (le *LoginEndpoint) handleUserDelete(c *gin.Context) {
-	idParam := c.Param("id")
+	idParam := c.Param("uid")
 	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", idParam)})
@@ -142,7 +117,7 @@ func (le *LoginEndpoint) handleUserDelete(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-// POST /login
+// POST /logins
 func (le *LoginEndpoint) handleLogin(c *gin.Context) {
 	type UserCreds struct {
 		Name     string `json:"user_name"`
@@ -179,20 +154,26 @@ func (le *LoginEndpoint) handleLogin(c *gin.Context) {
 	}
 
 	type LoginInfo struct {
+		UserID       uint64 `json:"user_id"`
+		LoginID      string `json:"login_id"`
 		AccessToken  string `json:"access_token"`
 		RefreshToken string `json:"refresh_token"`
 	}
 
-	loginInfo := LoginInfo{AccessToken: token.AccessToken, RefreshToken: token.RefreshToken}
+	loginInfo := LoginInfo{
+		LoginID:      token.AccessUUID,
+		UserID:       user.ID,
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken}
 	c.JSON(http.StatusOK, &loginInfo)
 }
 
-// POST /logout
+// DELETE /logins/:uuid
 func (le *LoginEndpoint) handleLogout(c *gin.Context) {
-	authCtx, _ := c.Get(ginauth.ContextKey)
-	authClaims := authCtx.(map[string]interface{})
+	atUUID := c.Param("uuid")
 
-	if _, err := le.AuthWriter.DeleteAuth(authClaims); err != nil {
+	// TODO Check the kind of error: is the UUID missing or?
+	if _, err := le.AuthWriter.DeleteAuth(atUUID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
