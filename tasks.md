@@ -49,7 +49,7 @@
   - Optional debug services
 - Move Redis from the Helm chart into it's own chart
 - Setup a JS dev environment for the UI
-- Fix the REST API
+- **(DONE)** Fix the REST API
   - At login return: `{ token: opaque, loginId: UUID, userId: int }`
   - To logout `DELETE /login/<UUID>`
   - Remove `/users/current`

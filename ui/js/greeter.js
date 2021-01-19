@@ -143,7 +143,19 @@ $(document).ready(function() {
 });
 
 // Delete Account
-$(document).ready(function() {
+$(document).ready(function() {    
+    $("#unregisterPopup").click(function(event) {
+        event.preventDefault();
+
+        if (isLoggedIn()) {
+            $("#unregisterMesssage").text("Logged in");
+        } else {
+            $("#unregisterMesssage").text("Not logged in");
+        }
+
+        $("#unregisterModal").css("display", "block");
+    });
+
     $("#unregisterBox").submit(function(event) {
         event.preventDefault();
         
