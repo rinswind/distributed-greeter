@@ -1,15 +1,16 @@
 function toAppPath(relative) {
-    return "/greeter/" + relative 
+    return `/greeter/${relative}` 
 }
 
 function isLoggedIn() {
     return !(typeof window.login === "undefined")
 }
 
+// Authenticate requests if login token is available
 $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
     if (isLoggedIn()) {
         options.headers = {
-            "Authorization": "Bearer " + btoa(window.login.access_token)
+            "Authorization": `Bearer ${btoa(window.login.access_token)}`
         };
     }
 })
@@ -18,13 +19,7 @@ $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
 $(document).ready(function() {
     $("#loginPopup").click(function(event) {
         event.preventDefault();
-
-        if (isLoggedIn()) {
-            $("#loginMessage").text("Logged in");
-        } else {
-            $("#loginMessage").text("Not logged in");
-        }
-
+        $("#loginMessage").text(isLoggedIn() ? "Logged in" : "Not logged in");
         $("#loginModal").css("display", "block");
     });
 
@@ -43,7 +38,7 @@ $(document).ready(function() {
                 user_password: password 
             })
         }).fail(function(resp) {
-            $("#loginMessage").text("Login failure: " + resp.status);
+            $("#loginMessage").text(`Login failure: ${resp.status}`);
         }).done(function(resp) {
             // Store jwt in the page root window object
             window.login = {
@@ -66,22 +61,16 @@ $(document).ready(function() {
 $(document).ready(function() {
     $("#logoutPopup").click(function(event) {
         event.preventDefault();
-
-        if (isLoggedIn()) {
-            $("#logoutMessage").text("Logged in");
-        } else {
-            $("#logoutMessage").text("Not logged in");
-        }
-
+        $("#logoutMessage").text(isLoggedIn() ? "Logged in" : "Not logged in");
         $("#logoutModal").css("display", "block");
     });
 
     $("#logoutBox").submit(function(event) {
         $.ajax({
             type: "DELETE",
-            url: toAppPath("auth/logins/" + window.login.login_id),
+            url: toAppPath(`auth/logins/${window.login.login_id}`),
          }).fail(function(resp) {
-            $("#logoutMessage").text("Logout failure: " + resp.status);
+            $("#logoutMessage").text(`Logout failure: ${resp.status}`);
         }).done(function(resp) {
             $("#logoutMessage").text("Logout success");
         }).always(function() {
@@ -99,13 +88,7 @@ $(document).ready(function() {
 $(document).ready(function() {
     $("#registerPopup").click(function(event) {
         event.preventDefault();
-
-        if (isLoggedIn()) {
-            $("#registerMessage").text("Logged in");
-        } else {
-            $("#registerMessage").text("Not logged in");
-        }
-
+        $("#registerMessage").text(isLoggedIn() ? "Logged in" : "Not logged in");
         $("#registerModal").css("display", "block");
     });
 
@@ -130,13 +113,13 @@ $(document).ready(function() {
                 user_password: password
             })
         }).fail(function(resp) {
-            $("#registerMessage").text("Registration failure: " + resp.status);
+            $("#registerMessage").text(`Registration failure: ${resp.status}`);
         }).done(function(resp) {
             $("#registerMessage").text("Registration success");
         });
     });
 
-    $("#registerClose").click(function (event) {
+    $("#registerClose").click(function(event) {
         event.preventDefault();
         $("#registerModal").css("display", "none");
     });
@@ -146,13 +129,7 @@ $(document).ready(function() {
 $(document).ready(function() {    
     $("#unregisterPopup").click(function(event) {
         event.preventDefault();
-
-        if (isLoggedIn()) {
-            $("#unregisterMesssage").text("Logged in");
-        } else {
-            $("#unregisterMesssage").text("Not logged in");
-        }
-
+        $("#unregisterMesssage").text(isLoggedIn() ? "Logged in" : "Not logged in");
         $("#unregisterModal").css("display", "block");
     });
 
@@ -161,9 +138,9 @@ $(document).ready(function() {
         
         $.ajax({
             type: "DELETE",
-            url: toAppPath("auth/users/" + window.login.user_id),
+            url: toAppPath(`auth/users/${window.login.user_id}`),
         }).fail(function(resp) {
-            $("#unregisterMessage").text("Delete account failure: " + resp.status);
+            $("#unregisterMessage").text(`Delete account failure: ${resp.status}`);
         }).done(function(resp) {
             $("#unregisterMessage").text("Deleted account");
         }).always(function() {
@@ -186,6 +163,7 @@ $(document).ready(function() {
 
         // Clear the current prefs content
         $("#prefsLanguages").find("option").remove();
+        $("#prefsMessage").text("");
 
         $.ajax({
             type: "GET",
@@ -194,7 +172,7 @@ $(document).ready(function() {
             $("#prefsLanguages").append(
                 $("<option></option>")
                 .attr("value", "none")
-                .text("Failed to get languages: " + resp.status));
+                .text(`Failed to get languages: ${resp.status}`));
         }).done(function(resp) {
             $.each(resp.languages, function(key, val) {
                 $("#prefsLanguages").append(
@@ -214,15 +192,15 @@ $(document).ready(function() {
         
         $.ajax({
             type: "PUT",
-            url: toAppPath("messages/users/" + window.login.user_id),
+            url: toAppPath(`messages/users/${window.login.user_id}`),
             contentType: "application/json",
             data: JSON.stringify({
                 user_language: language
             })
         }).fail(function(resp) {
-            $("#prefsMessage").text("Failed to save preferences: " + resp.status);
+            $("#prefsMessage").text(`Failed to save preferences: ${resp.status}`);
         }).done(function(resp) {
-            $("#prefsMessage").text("Saved preferences: " + resp.status);
+            $("#prefsMessage").text("Saved preferences");
         });
     });
 
@@ -246,13 +224,13 @@ $(document).ready(function() {
             type: "GET",
             url: toAppPath("messages/users/" + window.login.user_id),
          }).fail(function(resp) {
-            $("#greetMessage").text("Failed to retrieve preferences: " + resp.status);
+            $("#greetMessage").text(`Failed to retrieve preferences: ${resp.status}`);
         }).done(function(resp) {
             window.prefs = {
                 user_name: resp.user_name,
                 user_language: resp.user_language
             };
-            $("#greetMessage").text("Preferences: " + JSON.stringify(window.prefs));
+            $("#greetMessage").text(`Preferences: ${JSON.stringify(window.prefs)}`);
         }).always(function() {
             $("#greetModal").css("display", "block");
         });
@@ -261,17 +239,24 @@ $(document).ready(function() {
     $("#greetBox").submit(function(event) {
         event.preventDefault();
 
+        var date = new Date().toLocaleTimeString();
+
         $.ajax({
             type: "POST",
-            url: toAppPath("messages/greetings/" + window.prefs.user_language),
+            url: toAppPath("messages/greetings"),
+            contentType: "application/json",
+            data: JSON.stringify({
+                "user_id": window.login.user_id,
+                "language": window.prefs.user_language
+            })
          }).fail(function(resp) {
-            $("#greetMessage").text("Greeting Failure: " + resp.status);
+            $("#greetMessage").text(`(${date}) Failure: ${resp.status}`);
         }).done(function(resp) {
-            $("#greetMessage").text("Greeting Success: " + resp.message);
+            $("#greetMessage").text(`(${date}) Success: ${resp.message}`);
         });
     });
 
-    $("#greetClose").click(function (event) {
+    $("#greetClose").click(function(event) {
         event.preventDefault();
         $("#greetModal").css("display", "none");
     });

@@ -28,14 +28,14 @@ func (ge *GreeterEndpoint) Run() {
 	router.GET("/users/:uid", ge.handleUserInfo)
 	router.PUT("/users/:uid", ge.handleUserUpdate)
 
-	router.GET("/greetings", handleAllGreeters)
-	router.POST("/greetings/:lang", ge.handleGreeter)
+	router.GET("/greetings", handleGreetingLangs)
+	router.POST("/greetings", ge.handleGreeting)
 
 	router.Run(ge.Iface)
 }
 
 // GET /greetings
-func handleAllGreeters(c *gin.Context) {
+func handleGreetingLangs(c *gin.Context) {
 	type Languages struct {
 		Langs map[string]string `json:"languages"`
 	}
@@ -48,28 +48,34 @@ func handleAllGreeters(c *gin.Context) {
 	c.JSON(http.StatusOK, &langs)
 }
 
-// POST /greetings/:lang
-func (ge *GreeterEndpoint) handleGreeter(c *gin.Context) {
-	lang := c.Param("lang")
+// POST /greetings
+func (ge *GreeterEndpoint) handleGreeting(c *gin.Context) {
+	type MessageRequest struct {
+		ID       uint64 `json:"user_id"`
+		Language string `json:"language"`
+	}
 
-	authCtx, _ := c.Get(ginauth.ContextKey)
-	authClaims := authCtx.(map[string]interface{})
-	userID, _ := authClaims["user_id"].(uint64)
+	var msgReq MessageRequest
+	if err := c.ShouldBindJSON(&msgReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-	user, err := ge.Users.GetUser(userID)
+	user, err := ge.Users.GetUser(msgReq.ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	msg := messages.Greeters[lang](user.Name)
+	msg := messages.Greeters[msgReq.Language](user.Name)
 
 	type Message struct {
+		ID       uint64 `json:"user_id"`
 		Language string `json:"language"`
 		Message  string `json:"message"`
 	}
 
-	message := Message{Language: lang, Message: msg}
+	message := Message{ID: msgReq.ID, Language: msgReq.Language, Message: msg}
 	c.JSON(http.StatusOK, &message)
 }
 
