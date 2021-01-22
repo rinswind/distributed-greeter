@@ -18,6 +18,7 @@ messages:
     paths: [
       "/greeter/messages(/|$)(.*)"
     ]
+  db: ""
 
 auth:
   replicaCount: 1
@@ -37,6 +38,7 @@ auth:
     paths: [
       "/greeter/auth(/|$)(.*)"
     ]
+  db: ""
 
 ui:
   replicaCount: 1
@@ -55,3 +57,11 @@ ui:
     paths: [
       "/greeter(/|$)(.*)"
     ]
+
+# Set the shared secret all services use to handle the auth tokens created by the auth
+secrets: {}
+#  auth:
+#    token-secret: ""
+#    token-expiry: ""
+#    refresh-token-secret: ""
+#    refresh-token-expiry: ""
