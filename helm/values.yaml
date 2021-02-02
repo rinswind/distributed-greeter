@@ -61,7 +61,7 @@ ui:
 # Set the shared secret all services use to handle the auth tokens created by the auth
 secrets: {}
 #  auth:
-#    token-secret: ""
-#    token-expiry: ""
-#    refresh-token-secret: ""
-#    refresh-token-expiry: ""
+#    token_secret: ""
+#    token_expiry: ""
+#    refresh_token_secret: ""
+#    refresh_token_expiry: ""
