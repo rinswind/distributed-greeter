@@ -18,8 +18,12 @@ messages:
     paths: [
       "/greeter/messages(/|$)(.*)"
     ]
-  db: ""
   redis: ""
+  db: ""
+  secrets:
+    db:
+      user: ""
+      pass: ""
 
 auth:
   replicaCount: 1
@@ -40,6 +44,11 @@ auth:
       "/greeter/auth(/|$)(.*)"
     ]
   redis: ""
+  db: ""
+  secrets:
+    db:
+      user: ""
+      pass: ""
 
 ui:
   replicaCount: 1
@@ -66,6 +75,3 @@ secrets:
     token_expiry: ""
     refresh_token_secret: ""
     refresh_token_expiry: ""
-  db:
-   user: ""
-   pass: ""

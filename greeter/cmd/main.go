@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/go-redis/redis/v8"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/rinswind/auth-go/tokens"
 	"github.com/rinswind/distributed-greeter/greeter/internal/server"
 	"github.com/rinswind/distributed-greeter/greeter/internal/users"
@@ -25,6 +27,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer redis.Close()
 
 	// Init access token settings
 	atSecret := os.Getenv("ACCESS_TOKEN_SECRET")
@@ -35,8 +38,18 @@ func main() {
 	// Create the auth session manager
 	ar := &tokens.AuthReader{Redis: redis, ATSecret: atSecret, RTSecret: rtSecret}
 
-	// Create the user db client
-	users := users.Make(redis)
+	// Create the DB client
+	dbAddr := os.Getenv("DB_ADDR")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbUser, dbPass, dbAddr))
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	// Create the user store
+	users := users.Make(db, redis)
 	users.Listen()
 
 	ge := server.GreeterEndpoint{Iface: iface, AuthReader: ar, Users: users}

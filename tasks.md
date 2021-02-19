@@ -59,3 +59,9 @@
       - It is used to `POST /refresh`
       - ... similarly to `POST /logins`
       - ... to create a new resource `/logins/<UUID>`
+- Fix the Go builds to use Make:
+  - Make outside of container for dev
+  - Dockerfile to call Make inside gobuild container for prod/k8s
+  - [https://danishpraka.sh/2019/12/07/using-makefiles-for-go.html]
+- Fix the UI build to use Make
+  - Perhaps make it into a Go server of static content?

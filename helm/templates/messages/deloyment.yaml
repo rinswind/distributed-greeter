@@ -24,6 +24,9 @@ spec:
         imagePullPolicy: {{ .Values.messages.image.pullPolicy }}
         ports:
         - containerPort: 8080
+        # TODO Make this configurable together with a debug-capable image
+        # Remote debug port
+        - containerPort: 40000
         env:
         # TODO Load this from a ConfigMap?
         - name: REDIS_DSN
@@ -44,10 +47,10 @@ spec:
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: db-access-secret
-              key: DB_USER
+              name: messages-db-secret
+              key: USER
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: db-access-secret
-              key: DB_PASSWORD
+              name: messages-db-secret
+              key: PASSWORD
