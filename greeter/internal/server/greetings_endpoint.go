@@ -57,13 +57,16 @@ func (ge *GreeterEndpoint) handleGreeting(c *gin.Context) {
 
 	var msgReq MessageRequest
 	if err := c.ShouldBindJSON(&msgReq); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
+		// Report full details when the REST API contract is violated
+		c.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
 
 	user, err := ge.Users.GetUser(msgReq.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to find user %v", msgReq.ID)})
 		return
 	}
 
@@ -84,13 +87,15 @@ func (ge *GreeterEndpoint) handleUserInfo(c *gin.Context) {
 	uidParam := c.Param("uid")
 	uid, err := strconv.ParseUint(uidParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", uidParam)})
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("%v not a valid user ID", uidParam)})
 		return
 	}
 
 	user, err := ge.Users.GetUser(uid)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to find user %v", uid)})
 		return
 	}
 
@@ -109,7 +114,8 @@ func (ge *GreeterEndpoint) handleUserUpdate(c *gin.Context) {
 	uidParam := c.Param("uid")
 	uid, err := strconv.ParseUint(uidParam, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("%v not a valid user ID", uidParam)})
+		c.Error(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("%v not a valid user ID", uidParam)})
 		return
 	}
 
@@ -119,20 +125,23 @@ func (ge *GreeterEndpoint) handleUserUpdate(c *gin.Context) {
 
 	var userInfo UserInfo
 	if err := c.ShouldBindJSON(&userInfo); err != nil {
+		c.Error(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	user, err := ge.Users.GetUser(uid)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to find user %v", uid)})
 		return
 	}
 
 	user = &users.User{ID: uid, Name: user.Name, Language: userInfo.Language}
 	err = ge.Users.UpdateUser(user)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+		c.Error(err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Errorf("Failed to update user %v", user)})
 		return
 	}
 

@@ -43,6 +43,7 @@ func (s *Store) CreateUser(name, pass string) (uint64, error) {
 		return 0, fmt.Errorf("Failed to create user %v: %v", name, err)
 	}
 
+	// TODO Find a way to get the ID atomically with the INSERT
 	_, err = tx.Exec("INSERT INTO users (name, password) VALUES (?, ?)", name, pass)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
@@ -108,6 +109,7 @@ func (s *Store) DeleteUserByID(id uint64) error {
 		return fmt.Errorf("Failed to delete user %v: %v", id, err)
 	}
 
+	// TODO "SELECT FOR UPDATE"
 	var user User
 	err = tx.QueryRow("SELECT id, name, password FROM users WHERE id=?", id).Scan(&user.ID, &user.Name, &user.Password)
 	if err != nil {

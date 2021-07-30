@@ -75,6 +75,7 @@ func (s *Store) CreateUser(newUser *User) error {
 
 // GetUser finds a user
 func (s *Store) GetUser(id uint64) (*User, error) {
+	// TODO Differentiate between user not found and SQL or I/O errors
 	var user User
 	err := s.db.QueryRow("SELECT id, name, language FROM users WHERE id=?", id).Scan(&user.ID, &user.Name, &user.Language)
 	if err != nil {

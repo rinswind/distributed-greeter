@@ -65,3 +65,20 @@
   - [https://danishpraka.sh/2019/12/07/using-makefiles-for-go.html]
 - Fix the UI build to use Make
   - Perhaps make it into a Go server of static content?
+
+## Create an Azure version with the "research security architecture"
+
+- *NOTE*: Architecture
+  - Use azure mysql
+  - Use azure redis
+  - Use Managed Identities to talk to mysql and redis
+  - Use K8S Secure Store CSI driver to store JWT secret in Azure Key Vault
+
+- Create a greeter environment with all components internal like in the dev version
+- Modify it to have a manged db and plain password
+- Modify it to use manged redis (may have to create a TF module)
+- Modify db to use MSI
+- (?) Modify redis to use MSI
+- Modify to load the JWT secret from a file mount, not an env var
+- Modify to store the JWT secret in Azure Key Vault
+- Look for ways to make the JWT secret generated and inaccessible to users
