@@ -1,8 +1,18 @@
 #!/bin/sh
 
-REGISTRY=localhost:32000
-IMAGE=example-services/greeter-ui
-TAG=latest
+registry=localhost:32000
+tag=latest
+image=example-services/greeter-ui
+dockerFile=./Dockerfile
 
-docker build -t $IMAGE:$TAG -t $REGISTRY/$IMAGE:$TAG .
-docker push $REGISTRY/$IMAGE:$TAG
+while [ ! -z $1 ]; do
+case $1 in
+    --registry) registry=$2; shift 2; continue;;
+    --tag) tag=$2; shift 2; continue;;
+    --debug) dockerFile=./Dockerfile.debug; shift 1; continue;;
+    *) exit 1
+esac
+done
+
+docker build -t $image:$tag -t $registry/$image:$tag .
+docker push $registry/$image:$tag

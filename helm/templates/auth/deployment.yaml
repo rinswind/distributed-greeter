@@ -32,37 +32,37 @@ spec:
           value: "8080"
         # TODO Load this from a ConfigMap?
         - name: REDIS_DSN
-          value: {{ .Values.auth.redis }}
+          value: {{ .Values.auth.redis.addr }}
         - name: ACCESS_TOKEN_SECRET
           valueFrom:
             secretKeyRef:
-              name: auth-token-secret
+              name: {{ .Values.auth.authToken.secret }}
               key: ACCESS_TOKEN_SECRET
         - name: ACCESS_TOKEN_EXPIRY
           valueFrom:
             secretKeyRef:
-              name: auth-token-secret
+              name: {{ .Values.auth.authToken.secret }}
               key: ACCESS_TOKEN_EXPIRY
         - name: REFRESH_TOKEN_SECRET
           valueFrom:
             secretKeyRef:
-              name: auth-token-secret
+              name: {{ .Values.auth.authToken.secret }}
               key: REFRESH_TOKEN_SECRET
         - name: REFRESH_TOKEN_EXPIRY
           valueFrom:
             secretKeyRef:
-              name: auth-token-secret
+              name: {{ .Values.auth.authToken.secret }}
               key: REFRESH_TOKEN_EXPIRY
         # TODO Load this from a ConfigMap?
         - name: DB_ADDR
-          value: {{ .Values.auth.db }}
+          value: {{ .Values.auth.db.addr}}
         - name: DB_USER
           valueFrom:
             secretKeyRef:
-              name: auth-db-secret
+              name: {{ .Values.auth.db.secret }}
               key: USER
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: auth-db-secret
+              name: {{ .Values.auth.db.secret }}
               key: PASSWORD

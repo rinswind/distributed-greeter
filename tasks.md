@@ -66,15 +66,19 @@
 - Fix the UI build to use Make
   - Perhaps make it into a Go server of static content?
 
-## Create an Azure version with the "research security architecture"
+## Create an Azure version with the "suggested security architecture"
 
-- *NOTE*: Architecture
+- *NOTE*: The suggested security architecture
   - Use azure mysql
   - Use azure redis
   - Use Managed Identities to talk to mysql and redis
   - Use K8S Secure Store CSI driver to store JWT secret in Azure Key Vault
+  - Rotate secrets
 
-- Create a greeter environment with all components internal like in the dev version
+- *DONE:* Create a greeter environment with all components internal like in the dev version
+- Try to secure the secrets in the dev-like version.
+  - E.g. in a Azyre KeyVault with the CSI driver to supply them.
+  - *NOTE*: Setting a secret to the MySQL schemas is an issue.
 - Modify it to have a manged db and plain password
 - Modify it to use manged redis (may have to create a TF module)
 - Modify db to use MSI

@@ -18,12 +18,13 @@ messages:
     paths: [
       "/greeter/messages(/|$)(.*)"
     ]
-  redis: ""
-  db: ""
-  secrets:
-    db:
-      user: ""
-      pass: ""
+  redis:
+    addr: ""
+  db: 
+    addr: ""
+    secret: ""
+  authToken:
+    secret: ""
 
 auth:
   replicaCount: 1
@@ -43,12 +44,13 @@ auth:
     paths: [
       "/greeter/auth(/|$)(.*)"
     ]
-  redis: ""
-  db: ""
-  secrets:
-    db:
-      user: ""
-      pass: ""
+  redis:
+    addr: ""
+  db: 
+    addr: ""
+    secret: ""
+  authToken:
+    secret: ""
 
 ui:
   replicaCount: 1
@@ -67,11 +69,3 @@ ui:
     paths: [
       "/greeter(/|$)(.*)"
     ]
-
-# Set the shared secret all services use to handle the auth tokens created by the auth
-secrets:
-  auth:
-    token_secret: ""
-    token_expiry: ""
-    refresh_token_secret: ""
-    refresh_token_expiry: ""
