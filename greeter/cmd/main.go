@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/go-redis/redis/v8"
@@ -25,7 +26,7 @@ func main() {
 	})
 	_, err := redis.Ping(context.Background()).Result()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer redis.Close()
 
@@ -44,12 +45,16 @@ func main() {
 	dbPass := os.Getenv("DB_PASSWORD")
 	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbUser, dbPass, dbAddr))
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// Create the user store
+	// Create and init the user store
 	users := users.Make(db, redis)
+	err = users.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
 	users.Listen()
 
 	ge := server.GreeterEndpoint{Iface: iface, AuthReader: ar, Users: users}

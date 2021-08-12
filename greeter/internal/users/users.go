@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/go-redis/redis/v8"
@@ -29,6 +30,20 @@ type Store struct {
 // Make create a new Store
 func Make(db *sql.DB, redis *redis.Client) *Store {
 	return &Store{db: db, redis: redis}
+}
+
+func (s *Store) Init() error {
+	_, err := s.db.Exec(
+		`CREATE TABLE IF NOT EXISTS users (
+		id int NOT NULL,
+		name varchar(100) NOT NULL,
+		language varchar(40) NOT NULL,
+		PRIMARY KEY (id))`)
+
+	if err != nil {
+		return fmt.Errorf("failed to init schema: %v", err)
+	}
+	return nil
 }
 
 // Listen starts listening for User events

@@ -32,16 +32,6 @@ func main() {
 	}
 	defer redis.Close()
 
-	// Create the DB client
-	dbAddr := os.Getenv("DB_ADDR")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbUser, dbPass, dbAddr))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
 	// Init access token settings
 	atSecret := os.Getenv("ACCESS_TOKEN_SECRET")
 	atExp, err := strconv.Atoi(os.Getenv("ACCESS_TOKEN_EXPIRY"))
@@ -58,11 +48,29 @@ func main() {
 	}
 	rtExpiry := time.Minute * time.Duration(rtExp)
 
+	// Create the DB client
+	dbAddr := os.Getenv("DB_ADDR")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbUser, dbPass, dbAddr))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// Create and init the database
+	users := users.Make(db, redis)
+	err = users.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Run the REST endpoint
 	le := server.LoginEndpoint{
 		Iface:      iface,
 		AuthReader: &tokens.AuthReader{Redis: redis, ATSecret: atSecret, RTSecret: rtSecret},
 		AuthWriter: &tokens.AuthWriter{Redis: redis, ATSecret: atSecret, ATExpiry: atExpiry, RTSecret: rtSecret, RTExpiry: rtExpiry},
-		Users:      users.Make(db, redis),
+		Users:      users,
 	}
 	le.Run()
 }

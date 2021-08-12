@@ -30,6 +30,21 @@ func Make(db *sql.DB, redis *redis.Client) *Store {
 	return &Store{db: db, redis: redis}
 }
 
+// Initialize the user store if needed
+func (s *Store) Init() error {
+	_, err := s.db.Exec(
+		`CREATE TABLE IF NOT EXISTS users (
+		id int NOT NULL AUTO_INCREMENT,
+		name varchar(100) NOT NULL UNIQUE,
+		password varchar(40) NOT NULL,
+		PRIMARY KEY (id))`)
+
+	if err != nil {
+		return fmt.Errorf("failed to init schema: %v", err)
+	}
+	return nil
+}
+
 // CreateUser adds a new user
 func (s *Store) CreateUser(name, pass string) (uint64, error) {
 	// if _, ok := s.byName[name]; ok {
@@ -40,36 +55,36 @@ func (s *Store) CreateUser(name, pass string) (uint64, error) {
 
 	tx, err := s.db.Begin()
 	if err != nil {
-		return 0, fmt.Errorf("Failed to create user %v: %v", name, err)
+		return 0, fmt.Errorf("failed to create user %v: %v", name, err)
 	}
 
 	// TODO Find a way to get the ID atomically with the INSERT
 	_, err = tx.Exec("INSERT INTO users (name, password) VALUES (?, ?)", name, pass)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return 0, fmt.Errorf("Failed to create user %v: %v, rollback also failed: %v", name, err, rollbackErr)
+			return 0, fmt.Errorf("failed to create user %v: %v, rollback also failed: %v", name, err, rollbackErr)
 		}
-		return 0, fmt.Errorf("Failed to create user %v: %v", name, err)
+		return 0, fmt.Errorf("failed to create user %v: %v", name, err)
 	}
 
 	var id uint64
 	err = tx.QueryRow("SELECT LAST_INSERT_ID() FROM users LIMIT 1;").Scan(&id)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return 0, fmt.Errorf("Failed to create user %v: %v, rollback also failed: %v", name, err, rollbackErr)
+			return 0, fmt.Errorf("failed to create user %v: %v, rollback also failed: %v", name, err, rollbackErr)
 		}
-		return 0, fmt.Errorf("Failed to create user %v: %v", name, err)
+		return 0, fmt.Errorf("failed to create user %v: %v", name, err)
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return 0, fmt.Errorf("Failed to create user %v: %v", name, commitErr)
+		return 0, fmt.Errorf("failed to create user %v: %v", name, commitErr)
 	}
 
 	// TODO Do this before tx.Commit() and if this fails do tx.Rollback()?
 	userEvent := &Event{Type: int(Created), ID: id, Name: name}
 	err = s.redis.Publish(context.Background(), usersChannel, userEvent.Marshal()).Err()
 	if err != nil {
-		return 0, fmt.Errorf("Failed to publish user creation event %v: %v", userEvent, err)
+		return 0, fmt.Errorf("failed to publish user creation event %v: %v", userEvent, err)
 	}
 
 	return id, nil
@@ -80,7 +95,7 @@ func (s *Store) GetUserByName(name string) (*User, error) {
 	var user User
 	err := s.db.QueryRow("SELECT id, name, password FROM users WHERE name=?", name).Scan(&user.ID, &user.Name, &user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user %v: %v", name, err)
+		return nil, fmt.Errorf("failed to get user %v: %v", name, err)
 	}
 	return &user, nil
 }
@@ -90,7 +105,7 @@ func (s *Store) GetUserByID(id uint64) (*User, error) {
 	var user User
 	err := s.db.QueryRow("SELECT id, name, password FROM users WHERE id=?", id).Scan(&user.ID, &user.Name, &user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get user %v: %v", id, err)
+		return nil, fmt.Errorf("failed to get user %v: %v", id, err)
 	}
 	return &user, nil
 }
@@ -106,7 +121,7 @@ func (s *Store) DeleteUserByID(id uint64) error {
 
 	tx, err := s.db.Begin()
 	if err != nil {
-		return fmt.Errorf("Failed to delete user %v: %v", id, err)
+		return fmt.Errorf("failed to delete user %v: %v", id, err)
 	}
 
 	// TODO "SELECT FOR UPDATE"
@@ -114,28 +129,28 @@ func (s *Store) DeleteUserByID(id uint64) error {
 	err = tx.QueryRow("SELECT id, name, password FROM users WHERE id=?", id).Scan(&user.ID, &user.Name, &user.Password)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("Failed to find user %v: %v, unable to rollback: %v", id, err, rollbackErr)
+			return fmt.Errorf("failed to find user %v: %v, unable to rollback: %v", id, err, rollbackErr)
 		}
-		return fmt.Errorf("Failed to find user %v: %v", id, err)
+		return fmt.Errorf("failed to find user %v: %v", id, err)
 	}
 
 	_, err = tx.Exec("DELETE FROM users WHERE id=?", user.ID)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return fmt.Errorf("Failed to delete user: %v, unable to rollback: %v", err, rollbackErr)
+			return fmt.Errorf("failed to delete user: %v, unable to rollback: %v", err, rollbackErr)
 		}
 		return err
 	}
 
 	if commitErr := tx.Commit(); commitErr != nil {
-		return fmt.Errorf("Failed to delete user %v: %v", id, commitErr)
+		return fmt.Errorf("failed to delete user %v: %v", id, commitErr)
 	}
 
 	// TODO Do this before tx.Commit() and if this fails do tx.Rollback()?
 	userEvent := Event{Type: int(Deleted), ID: user.ID, Name: user.Name}
 	err = s.redis.Publish(context.Background(), usersChannel, userEvent.Marshal()).Err()
 	if err != nil {
-		return fmt.Errorf("Failed to publish user deletion event: %v", err)
+		return fmt.Errorf("failed to publish user deletion event: %v", err)
 	}
 
 	return nil
