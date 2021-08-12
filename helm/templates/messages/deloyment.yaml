@@ -28,29 +28,27 @@ spec:
         # Remote debug port
         - containerPort: 40000
         env:
-        # TODO Load this from a ConfigMap?
-        - name: REDIS_DSN
+        - name: HTTP_PORT
+          value: "8080"
+        - name: REDIS_ADDR
           value: {{ .Values.messages.redis.addr }}
-        - name: ACCESS_TOKEN_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.messages.authToken.secret }}
-              key: ACCESS_TOKEN_SECRET
-        - name: REFRESH_TOKEN_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.messages.authToken.secret }}
-              key: REFRESH_TOKEN_SECRET
-        # TODO Load this from a ConfigMap?
         - name: DB_ADDR
           value: {{ .Values.messages.db.addr}}
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.messages.db.secret }}
-              key: USER
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Values.messages.db.secret }}
-              key: PASSWORD
+        - name: DB_CREDS
+          value: "/secrets/db/db-creds.json"
+        - name: AUTH_TOKEN_CREDS
+          value: "/secrets/auth/auth-token-creds.json"
+        volumeMounts:
+        - name: db-creds
+          mountPath: "/secrets/db"
+          readOnly: true
+        - name: auth-token-creds
+          mountPath: "/secrets/auth"
+          readOnly: true
+      volumes:
+      - name: db-creds
+        secret:
+          secretName: {{ .Values.messages.db.secret }}
+      - name: auth-token-creds
+        secret:
+          secretName: {{ .Values.messages.authToken.secret }}

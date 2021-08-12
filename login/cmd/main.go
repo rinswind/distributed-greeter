@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -16,61 +17,82 @@ import (
 	"github.com/rinswind/distributed-greeter/login/internal/users"
 )
 
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func readJsonFile(file string, out interface{}) error {
+	raw, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(raw, out)
+	return err
+}
+
 func main() {
 	// Read the HTTP port
 	port := os.Getenv("HTTP_PORT")
 	iface := fmt.Sprintf(":%v", port)
 
 	// Init Redis client
-	dsn := os.Getenv("REDIS_DSN")
+	redisDsn := os.Getenv("REDIS_ADDR")
 	redis := redis.NewClient(&redis.Options{
-		Addr: dsn, //redis port
+		Addr: redisDsn,
 	})
 	_, err := redis.Ping(context.Background()).Result()
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 	defer redis.Close()
 
-	// Init access token settings
-	atSecret := os.Getenv("ACCESS_TOKEN_SECRET")
-	atExp, err := strconv.Atoi(os.Getenv("ACCESS_TOKEN_EXPIRY"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	atExpiry := time.Minute * time.Duration(atExp)
+	// Read the auth-token credentials
+	var accessCreds struct {
+		AccessTokenSecret string `json:"accessTokenSecret"`
+		AccessTokenExpiry int    `json:"accessTokenExpiry"`
 
-	// Init refresh token settings
-	rtSecret := os.Getenv("REFRESH_TOKEN_SECRET")
-	rtExp, err := strconv.Atoi(os.Getenv("REFRESH_TOKEN_EXPIRY"))
-	if err != nil {
-		log.Fatal(err)
+		RefreshTokenSecret string `json:"refreshTokenSecret"`
+		RefreshTokenExpiry int    `json:"refreshTokenExpiry"`
 	}
-	rtExpiry := time.Minute * time.Duration(rtExp)
+	authCredsFile := os.Getenv("AUTH_TOKEN_CREDS")
+	err = readJsonFile(authCredsFile, &accessCreds)
+	check(err)
 
 	// Create the DB client
 	dbAddr := os.Getenv("DB_ADDR")
-	dbUser := os.Getenv("DB_USER")
-	dbPass := os.Getenv("DB_PASSWORD")
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbUser, dbPass, dbAddr))
-	if err != nil {
-		log.Fatal(err)
+
+	var dbCreds struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
 	}
+	dbCredsFile := os.Getenv("DB_CREDS")
+	err = readJsonFile(dbCredsFile, &dbCreds)
+	check(err)
+
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbCreds.User, dbCreds.Password, dbAddr))
+	check(err)
 	defer db.Close()
 
-	// Create and init the database
+	// Create and init the DB
 	users := users.Make(db, redis)
 	err = users.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
+	check(err)
 
 	// Run the REST endpoint
 	le := server.LoginEndpoint{
-		Iface:      iface,
-		AuthReader: &tokens.AuthReader{Redis: redis, ATSecret: atSecret, RTSecret: rtSecret},
-		AuthWriter: &tokens.AuthWriter{Redis: redis, ATSecret: atSecret, ATExpiry: atExpiry, RTSecret: rtSecret, RTExpiry: rtExpiry},
-		Users:      users,
+		Iface: iface,
+		AuthReader: &tokens.AuthReader{
+			Redis:    redis,
+			ATSecret: accessCreds.AccessTokenSecret,
+			RTSecret: accessCreds.RefreshTokenSecret},
+		AuthWriter: &tokens.AuthWriter{
+			Redis:    redis,
+			ATSecret: accessCreds.AccessTokenSecret,
+			ATExpiry: time.Minute * time.Duration(accessCreds.AccessTokenExpiry),
+			RTSecret: accessCreds.RefreshTokenSecret,
+			RTExpiry: time.Minute * time.Duration(accessCreds.RefreshTokenExpiry)},
+		Users: users,
 	}
 	le.Run()
 }
