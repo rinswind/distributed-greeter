@@ -47,8 +47,6 @@ spec:
           readOnly: true
       volumes:
       - name: db-creds
-        secret:
-          secretName: {{ .Values.messages.db.secret }}
+        secret: {{- .Values.messages.db.secret | toYaml | nindent 10 }}
       - name: auth-token-creds
-        secret:
-          secretName: {{ .Values.messages.authToken.secret }}
+        secret: {{- .Values.messages.authToken.secret | toYaml | nindent 10 }}

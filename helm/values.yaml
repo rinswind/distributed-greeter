@@ -22,9 +22,9 @@ messages:
     addr: ""
   db: 
     addr: ""
-    secret: ""
+    secret: {}
   authToken:
-    secret: ""
+    secret: {}
 
 auth:
   replicaCount: 1
@@ -48,9 +48,9 @@ auth:
     addr: ""
   db: 
     addr: ""
-    secret: ""
+    secret: {}
   authToken:
-    secret: ""
+    secret: {}
 
 ui:
   replicaCount: 1
