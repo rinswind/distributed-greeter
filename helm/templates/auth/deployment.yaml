@@ -39,14 +39,6 @@ spec:
         - name: AUTH_TOKEN_CREDS
           value: "/secrets/auth/auth-token-creds.json"
         volumeMounts:
-        - name: db-creds
-          mountPath: "/secrets/db"
-          readOnly: true
-        - name: auth-token-creds
-          mountPath: "/secrets/auth"
-          readOnly: true
+        {{- .Values.auth.volumeMounts | toYaml | nindent 8 }}
       volumes:
-      - name: db-creds
-        secret: {{- .Values.auth.db.secret | toYaml | nindent 10 }}
-      - name: auth-token-creds
-        secret: {{- .Values.auth.authToken.secret | toYaml | nindent 10 }}
+      {{- .Values.auth.volumes | toYaml | nindent 6 }}

@@ -22,9 +22,8 @@ messages:
     addr: ""
   db: 
     addr: ""
-    secret: {}
-  authToken:
-    secret: {}
+  volumes: []
+  volumeMounts: []
 
 auth:
   replicaCount: 1
@@ -48,9 +47,8 @@ auth:
     addr: ""
   db: 
     addr: ""
-    secret: {}
-  authToken:
-    secret: {}
+  volumes: []
+  volumeMounts: []
 
 ui:
   replicaCount: 1

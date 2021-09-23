@@ -2,9 +2,9 @@
 
 ## Manuals
 
-- Basic HTTP server: https://tutorialedge.net/golang/creating-simple-web-server-with-golang/
-- REST + SQL service: https://blog.logrocket.com/how-to-build-a-rest-api-with-golang-using-gin-and-gorm/ 
-- JWT auth: https://dev.to/omnisyle/simple-jwt-authentication-for-golang-part-1-3kfo
+- [pBasic HTTP server](https://tutorialedge.net/golang/creating-simple-web-server-with-golang)
+- [REST + SQL service](https://blog.logrocket.com/how-to-build-a-rest-api-with-golang-using-gin-and-gorm)
+- [JWT auth](https://dev.to/omnisyle/simple-jwt-authentication-for-golang-part-1-3kfo)
 
 ## Tasks
 
@@ -75,13 +75,20 @@
   - Use K8S Secure Store CSI driver to store JWT secret in Azure Key Vault
   - Rotate secrets
 
-- *DONE:* Create a greeter environment with all components internal like in the dev version
+- **(DONE)** Create a greeter environment with all components internal like in the dev version
+- **(DONE)** Create a base-line case
+  - Use Secret resources provisioned off-band
+  - In PODs mount secrets as files
+  - Separate DB initialization from DB creation to prepare for the use of a Managed DB
 - Try to secure the secrets in the dev-like version.
-  - E.g. in a Azyre KeyVault with the CSI driver to supply them.
-  - *NOTE*: Setting a secret to the MySQL schemas is an issue.
+  - E.g. in a Azure KeyVault with the CSI driver to supply them.
+  - *NOTE*: Setting a secret to access the MySQL schemas is an issue.
 - Modify it to have a manged db and plain password
 - Modify it to use manged redis (may have to create a TF module)
+  - [https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-overview]
 - Modify db to use MSI
+  - [https://docs.microsoft.com/en-us/azure/mysql/howto-configure-sign-in-azure-ad-authentication]
+  - [https://docs.microsoft.com/en-us/azure/mysql/howto-connect-with-managed-identity]
 - (?) Modify redis to use MSI
 - Modify to load the JWT secret from a file mount, not an env var
 - Modify to store the JWT secret in Azure Key Vault
