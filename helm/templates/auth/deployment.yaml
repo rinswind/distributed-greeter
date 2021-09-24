@@ -1,3 +1,4 @@
+{{- with .Values.auth }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +8,7 @@ metadata:
     app.kubernetes.io/name: auth
     app.kubernetes.io/part-of: greeter
 spec:
-  replicas: {{ .Values.auth.replicaCount | default 1 }}
+  replicas: {{ .replicaCount | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: auth
@@ -20,8 +21,8 @@ spec:
     spec:
       containers:
       - name: auth
-        image: "{{ .Values.auth.image.repository }}:{{ .Values.auth.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+        image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
         ports:
         - containerPort: 8080
         # TODO Make this configurable together with a debug-capable image
@@ -40,7 +41,12 @@ spec:
           value: {{ .db.credsFile }}
         - name: AUTH_TOKEN_CREDS
           value: {{ .auth.credsFile }}
+        {{- if .volumeMounts }}
         volumeMounts:
-        {{- .Values.auth.volumeMounts | toYaml | nindent 8 }}
+        {{- .volumeMounts | toYaml | nindent 8 }}
+        {{- end }}
+      {{- if .volumes }}
       volumes:
-      {{- .Values.auth.volumes | toYaml | nindent 6 }}
+      {{- .volumes | toYaml | nindent 6 }}
+      {{- end }}
+{{- end }}

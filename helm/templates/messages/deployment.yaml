@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: greeter
-        image: "{{ .image.repository }}:{{ .image.tag | default .Chart.AppVersion }}"
+        image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: {{ .image.pullPolicy }}
         ports:
         - containerPort: 8080
@@ -41,8 +41,12 @@ spec:
           value: {{ .db.credsFile }}
         - name: AUTH_TOKEN_CREDS
           value: {{ .auth.credsFile }}
+        {{- if .volumeMounts }}
         volumeMounts:
         {{- .volumeMounts | toYaml | nindent 8 }}
+        {{- end }}
+      {{- if .volumes }}
       volumes:
       {{- .volumes | toYaml | nindent 6 }}
+      {{- end }}
 {{- end }}
