@@ -9,10 +9,6 @@ FROM example-services/builder:latest as builder
 FROM example-services/base-debug:latest
 
 ENV HTTP_PORT="8080" \
-    REDIS_DSN="redis:6379" \
-    ACCESS_TOKEN_SECRET="secret" \
-    ACCESS_TOKEN_EXPIRY="5" \
-    REFRESH_TOKEN_SECRET="secret" \
-    REFRESH_TOKEN_EXPIRY="60"
+    REDIS_DSN="redis:6379"
 
 EXPOSE 8080

@@ -31,13 +31,15 @@ spec:
         - name: HTTP_PORT
           value: "8080"
         - name: REDIS_ADDR
-          value: {{ .Values.auth.redis.addr }}
+          value: {{ .redis.addr }}
+        - name: REDIS_CREDS
+          value: {{ .redis.credsFile }}
         - name: DB_ADDR
-          value: {{ .Values.auth.db.addr}}
+          value: {{ .db.addr}}
         - name: DB_CREDS
-          value: "/secrets/db/db-creds.json"
+          value: {{ .db.credsFile }}
         - name: AUTH_TOKEN_CREDS
-          value: "/secrets/auth/auth-token-creds.json"
+          value: {{ .auth.credsFile }}
         volumeMounts:
         {{- .Values.auth.volumeMounts | toYaml | nindent 8 }}
       volumes:

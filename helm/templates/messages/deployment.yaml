@@ -1,3 +1,4 @@
+{{- with .Values.messages }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,7 +8,7 @@ metadata:
     app.kubernetes.io/name: messages
     app.kubernetes.io/part-of: greeter
 spec:
-  replicas: {{ .Values.messages.replicaCount | default 1 }}
+  replicas: {{ .replicaCount | default 1 }}
   selector:
     matchLabels:
       app.kubernetes.io/name: messages
@@ -20,8 +21,8 @@ spec:
     spec:
       containers:
       - name: greeter
-        image: "{{ .Values.messages.image.repository }}:{{ .Values.messages.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.messages.image.pullPolicy }}
+        image: "{{ .image.repository }}:{{ .image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
         ports:
         - containerPort: 8080
         # TODO Make this configurable together with a debug-capable image
@@ -31,14 +32,17 @@ spec:
         - name: HTTP_PORT
           value: "8080"
         - name: REDIS_ADDR
-          value: {{ .Values.messages.redis.addr }}
+          value: {{ .redis.addr }}
+        - name: REDIS_CREDS
+          value: {{ .redis.credsFile }}
         - name: DB_ADDR
-          value: {{ .Values.messages.db.addr}}
+          value: {{ .db.addr}}
         - name: DB_CREDS
-          value: "/secrets/db/db-creds.json"
+          value: {{ .db.credsFile }}
         - name: AUTH_TOKEN_CREDS
-          value: "/secrets/auth/auth-token-creds.json"
+          value: {{ .auth.credsFile }}
         volumeMounts:
-        {{- .Values.auth.volumeMounts | toYaml | nindent 8 }}
+        {{- .volumeMounts | toYaml | nindent 8 }}
       volumes:
-      {{- .Values.auth.volumes | toYaml | nindent 6 }}
+      {{- .volumes | toYaml | nindent 6 }}
+{{- end }}

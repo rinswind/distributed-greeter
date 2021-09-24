@@ -40,8 +40,16 @@ func main() {
 
 	// Init Redis client
 	redisDsn := os.Getenv("REDIS_ADDR")
+
+	redisCredsFile := os.Getenv("REDIS_CREDS")
+	var redisCreds struct {
+		AccessKey string `json:"accessKey"`
+	}
+	readJsonFile(redisCredsFile, &redisCreds)
+
 	redis := redis.NewClient(&redis.Options{
-		Addr: redisDsn,
+		Addr:     redisDsn,
+		Password: redisCreds.AccessKey,
 	})
 	_, err := redis.Ping(context.Background()).Result()
 	check(err)

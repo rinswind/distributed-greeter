@@ -20,8 +20,12 @@ messages:
     ]
   redis:
     addr: ""
-  db: 
+    credsFile: "/secrets/redis/redis-creds.json"
+  db:
     addr: ""
+    credsFile: "/secrets/db/db-creds.json"
+  auth:
+    credsFile: "/secrets/auth/auth-token-creds.json"
   volumes: []
   volumeMounts: []
 
@@ -45,8 +49,12 @@ auth:
     ]
   redis:
     addr: ""
-  db: 
+    credsFile: "/secrets/redis/redis-creds.json"
+  db:
     addr: ""
+    credsFile: "/secrets/db/db-creds.json"
+  auth:
+    credsFile: "/secrets/auth/auth-token-creds.json"
   volumes: []
   volumeMounts: []
 

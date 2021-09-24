@@ -8,10 +8,8 @@ FROM example-services/builder as builder
 #
 FROM example-services/base
 
-ENV HTTP_PORT=8080 \
+ENV HTTP_PORT="8080" \
     REDIS_DSN="redis:6379" \
-    ACCESS_TOKEN_SECRET=secret \
-    REFRESH_TOKEN_SECRET=secret \
     GIN_MODE=release
 
 EXPOSE 8080
