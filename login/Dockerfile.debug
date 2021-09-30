@@ -8,7 +8,6 @@ FROM example-services/builder:latest as builder
 #
 FROM example-services/base-debug:latest
 
-ENV HTTP_PORT="8080" \
-    REDIS_DSN="redis:6379"
+ENV HTTP_PORT="8080"
 
 EXPOSE 8080

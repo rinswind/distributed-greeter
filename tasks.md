@@ -80,16 +80,18 @@
   - Use Secret resources provisioned off-band
   - In PODs mount secrets as files
   - Separate DB initialization from DB creation to prepare for the use of a Managed DB
-- Try to secure the secrets in the dev-like version.
+- **(DONE)** Try to secure the secrets in the dev-like version.
   - E.g. in a Azure KeyVault with the CSI driver to supply them.
   - *NOTE*: Setting a secret to access the MySQL schemas is an issue.
-- Modify it to have a manged db and plain password
-- Modify it to use manged redis (may have to create a TF module)
+- **(DONE)** Modify it to have a manged db and plain password
+- **(DONE)** Modify it to use manged redis (may have to create a TF module)
   - [https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-overview]
 - Modify db to use MSI
   - [https://docs.microsoft.com/en-us/azure/mysql/howto-configure-sign-in-azure-ad-authentication]
+  - [https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-use-vm-token#get-a-token-using-go]
   - [https://docs.microsoft.com/en-us/azure/mysql/howto-connect-with-managed-identity]
-- (?) Modify redis to use MSI
-- Modify to load the JWT secret from a file mount, not an env var
-- Modify to store the JWT secret in Azure Key Vault
+  - [https://pkg.go.dev/golang.org/x/oauth2]
+- Modify redis to use MSI
+- **(DONE)** Modify to load the JWT secret from a file mount, not an env var
+- **(DONE)** Modify to store the JWT secret in Azure Key Vault
 - Look for ways to make the JWT secret generated and inaccessible to users
