@@ -1,18 +1,30 @@
 #!/bin/sh
-
-registry=localhost:32000
-tag=latest
-image=example-services/greeter
-dockerFile=./Dockerfile
+image="example-services/greeter"
+registry="localhost:32000"
+tag="latest"
+dockerFile="./Dockerfile"
+platform="generic"
 
 while [ ! -z $1 ]; do
 case $1 in
     --registry) registry=$2; shift 2; continue;;
     --tag) tag=$2; shift 2; continue;;
     --debug) dockerFile=./Dockerfile.debug; shift 1; continue;;
+    --platform) platform=$2; shift 2; continue;;
     *) exit 1
 esac
 done
 
-docker build -t $image:$tag -t $registry/$image:$tag -f $dockerFile . && \
-docker push $registry/$image:$tag
+target="./cmd/$platform/main.go"
+
+if [ "$platform" = "generic" ]; then 
+    suffix=""
+else
+    suffix="-$platform"
+fi
+
+tagLocal="$image$suffix:$tag"
+tagRemote="$registry/$tagLocal"
+
+docker build -t $tagLocal -t $tagRemote -f $dockerFile --build-arg target_arg=$target . && \
+docker push $tagRemote

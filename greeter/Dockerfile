@@ -1,9 +1,7 @@
 #
 # Builder
 #
-FROM example-services/builder as builder
-
-COPY ../msi 
+FROM example-services/builder AS builder
 
 # 
 # Runtime

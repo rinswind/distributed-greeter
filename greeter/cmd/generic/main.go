@@ -36,32 +36,42 @@ func main() {
 	// Setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmsgprefix | log.Lshortfile)
 
+	var err error
+
 	// Read the HTTP port
 	port := os.Getenv("HTTP_PORT")
 	iface := fmt.Sprintf(":%v", port)
 
-	// Init Redis client
+	// Init the Redis client
 	redisDsn := os.Getenv("REDIS_ADDR")
 
 	redisCredsFile := os.Getenv("REDIS_CREDS")
 	var redisCreds struct {
 		AccessKey string `json:"accessKey"`
 	}
-	readJsonFile(redisCredsFile, &redisCreds)
+	err = readJsonFile(redisCredsFile, &redisCreds)
+	check(err)
 
 	redis := redis.NewClient(&redis.Options{
 		Addr:     redisDsn,
 		Password: redisCreds.AccessKey,
 	})
-	_, err := redis.Ping(context.Background()).Result()
+	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
 
-	// Read the DB client config
-	dbDsn := os.Getenv("DB_ADDR")
-
 	// Create the DB client
-	db, err := sql.Open("mysqlMsi", dbDsn)
+	dbAddr := os.Getenv("DB_ADDR")
+
+	var dbCreds struct {
+		User     string `json:"user"`
+		Password string `json:"password"`
+	}
+	dbCredsFile := os.Getenv("DB_CREDS")
+	err = readJsonFile(dbCredsFile, &dbCreds)
+	check(err)
+
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", dbCreds.User, dbCreds.Password, dbAddr))
 	check(err)
 	defer db.Close()
 
@@ -71,7 +81,7 @@ func main() {
 	check(err)
 	users.Listen()
 
-	// Init access token settings
+	// Create the auth session manager
 	var accessCreds struct {
 		AccessTokenSecret  string `json:"accessTokenSecret"`
 		RefreshTokenSecret string `json:"refreshTokenSecret"`
@@ -80,9 +90,15 @@ func main() {
 	err = readJsonFile(authCredsFile, &accessCreds)
 	check(err)
 
-	// Create the auth session manager
-	ar := &tokens.AuthReader{Redis: redis, ATSecret: accessCreds.AccessTokenSecret, RTSecret: accessCreds.RefreshTokenSecret}
+	authReader := &tokens.AuthReader{
+		Redis:    redis,
+		ATSecret: accessCreds.AccessTokenSecret,
+		RTSecret: accessCreds.RefreshTokenSecret}
 
-	ge := server.GreeterEndpoint{Iface: iface, AuthReader: ar, Users: users}
-	ge.Run()
+	// Create and run the greeter endpoint
+	greeterEndpoint := server.GreeterEndpoint{
+		Iface:      iface,
+		AuthReader: authReader,
+		Users:      users}
+	greeterEndpoint.Run()
 }

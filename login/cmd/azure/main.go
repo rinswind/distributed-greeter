@@ -37,6 +37,8 @@ func main() {
 	// Setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmsgprefix | log.Lshortfile)
 
+	var err error
+
 	// Read the HTTP port
 	port := os.Getenv("HTTP_PORT")
 	iface := fmt.Sprintf(":%v", port)
@@ -48,27 +50,16 @@ func main() {
 	var redisCreds struct {
 		AccessKey string `json:"accessKey"`
 	}
-	readJsonFile(redisCredsFile, &redisCreds)
+	err = readJsonFile(redisCredsFile, &redisCreds)
+	check(err)
 
 	redis := redis.NewClient(&redis.Options{
 		Addr:     redisDsn,
 		Password: redisCreds.AccessKey,
 	})
-	_, err := redis.Ping(context.Background()).Result()
+	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
-
-	// Read the auth-token credentials
-	var accessCreds struct {
-		AccessTokenSecret string `json:"accessTokenSecret"`
-		AccessTokenExpiry int    `json:"accessTokenExpiry"`
-
-		RefreshTokenSecret string `json:"refreshTokenSecret"`
-		RefreshTokenExpiry int    `json:"refreshTokenExpiry"`
-	}
-	authCredsFile := os.Getenv("AUTH_TOKEN_CREDS")
-	err = readJsonFile(authCredsFile, &accessCreds)
-	check(err)
 
 	// Create the DB client
 	dbAddr := os.Getenv("DB_ADDR")
@@ -82,20 +73,36 @@ func main() {
 	err = users.Init()
 	check(err)
 
-	// Run the REST endpoint
+	// Create the Auth token handlers
+	var accessCreds struct {
+		AccessTokenSecret string `json:"accessTokenSecret"`
+		AccessTokenExpiry int    `json:"accessTokenExpiry"`
+
+		RefreshTokenSecret string `json:"refreshTokenSecret"`
+		RefreshTokenExpiry int    `json:"refreshTokenExpiry"`
+	}
+	authCredsFile := os.Getenv("AUTH_TOKEN_CREDS")
+	err = readJsonFile(authCredsFile, &accessCreds)
+	check(err)
+
+	authReader := tokens.AuthReader{
+		Redis:    redis,
+		ATSecret: accessCreds.AccessTokenSecret,
+		RTSecret: accessCreds.RefreshTokenSecret}
+
+	authWriter := tokens.AuthWriter{
+		Redis:    redis,
+		ATSecret: accessCreds.AccessTokenSecret,
+		ATExpiry: time.Minute * time.Duration(accessCreds.AccessTokenExpiry),
+		RTSecret: accessCreds.RefreshTokenSecret,
+		RTExpiry: time.Minute * time.Duration(accessCreds.RefreshTokenExpiry)}
+
+	// Create and run the REST endpoint
 	le := server.LoginEndpoint{
-		Iface: iface,
-		AuthReader: &tokens.AuthReader{
-			Redis:    redis,
-			ATSecret: accessCreds.AccessTokenSecret,
-			RTSecret: accessCreds.RefreshTokenSecret},
-		AuthWriter: &tokens.AuthWriter{
-			Redis:    redis,
-			ATSecret: accessCreds.AccessTokenSecret,
-			ATExpiry: time.Minute * time.Duration(accessCreds.AccessTokenExpiry),
-			RTSecret: accessCreds.RefreshTokenSecret,
-			RTExpiry: time.Minute * time.Duration(accessCreds.RefreshTokenExpiry)},
-		Users: users,
+		Iface:      iface,
+		AuthReader: &authReader,
+		AuthWriter: &authWriter,
+		Users:      users,
 	}
 	le.Run()
 }

@@ -1,7 +1,7 @@
 #
 # Builder
 #
-FROM example-services/builder as builder
+FROM example-services/builder AS builder
 
 # 
 # Runtime
