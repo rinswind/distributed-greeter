@@ -4,10 +4,16 @@ messages:
   replicaCount: 1
   image:
     repository: toboregistry.azurecr.io/example-services/greeter
-    pullPolicy: IfNotPresent
     tag: 1.0.0
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+  serviceAccount:
+    create: false
+  #  name: messages-service-account
+  #   annotations: {}
   service:
     type: ClusterIP
+    annotations: {}
   ingress:
     enabled: true
     annotations: {
@@ -35,8 +41,14 @@ auth:
     repository: toboregistry.azurecr.io/example-services/login
     pullPolicy: IfNotPresent
     tag: 1.0.0
+    pullSecrets: []
+  serviceAccount:
+    create: false
+  #  name: auth-service-account
+  #   annotations: {}
   service:
     type: ClusterIP
+    annotations: {}
   ingress:
     enabled: true
     annotations: {
@@ -64,8 +76,14 @@ ui:
     repository: toboregistry.azurecr.io/example-services/greeter-ui
     pullPolicy: IfNotPresent
     tag: 1.0.0
+    pullSecrets: []
+  serviceAccount:
+    create: false
+  #  name: ui-service-account
+  #   annotations: {}
   service:
     type: ClusterIP
+    annotations: {}
   ingress:
     enabled: true
     annotations: {

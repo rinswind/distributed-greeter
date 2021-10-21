@@ -2,7 +2,7 @@
 
 ## Manuals
 
-- [pBasic HTTP server](https://tutorialedge.net/golang/creating-simple-web-server-with-golang)
+- [Basic HTTP server](https://tutorialedge.net/golang/creating-simple-web-server-with-golang)
 - [REST + SQL service](https://blog.logrocket.com/how-to-build-a-rest-api-with-golang-using-gin-and-gorm)
 - [JWT auth](https://dev.to/omnisyle/simple-jwt-authentication-for-golang-part-1-3kfo)
 
@@ -77,7 +77,7 @@
 
 - **(DONE)** Create a greeter environment with all components internal like in the dev version
 - **(DONE)** Create a base-line case
-  - Use Secret resources provisioned off-band
+  - Use Secret resources provisioned off-band in etcd
   - In PODs mount secrets as files
   - Separate DB initialization from DB creation to prepare for the use of a Managed DB
 - **(DONE)** Try to secure the secrets in the dev-like version.
@@ -86,12 +86,42 @@
 - **(DONE)** Modify it to have a manged db and plain password
 - **(DONE)** Modify it to use manged redis (may have to create a TF module)
   - [https://docs.microsoft.com/en-us/azure/azure-cache-for-redis/cache-overview]
-- Modify db to use MSI
+- **(DONE)** Modify db to use MSI
   - [https://docs.microsoft.com/en-us/azure/mysql/howto-configure-sign-in-azure-ad-authentication]
   - [https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-use-vm-token#get-a-token-using-go]
   - [https://docs.microsoft.com/en-us/azure/mysql/howto-connect-with-managed-identity]
   - [https://pkg.go.dev/golang.org/x/oauth2]
-- Modify redis to use MSI
+- **(CANCELLED)** Modify redis to use MSI
+  - Not supported by Azure, must use a secret
 - **(DONE)** Modify to load the JWT secret from a file mount, not an env var
 - **(DONE)** Modify to store the JWT secret in Azure Key Vault
 - Look for ways to make the JWT secret generated and inaccessible to users
+- Automate the setup setup for the MySQL
+  - Requires modifications to the terraform config
+  - Required sequence:
+      1. Enable an AAD admin user for the MySQL
+      2. Get the K8S agent-pool MSI
+      3. Get the AAD user to
+          - Create the app user identified by the MSI client ID
+          - Create a DB and add admin right to the user
+
+## Create an AWS version with the "suggested security architecture"
+
+- *NOTE*: The suggested security architecture
+  - Use RDS (rather than MySQL pods)
+  - Use MemoryDB for Redis (rather than Redis pods)
+  - Use IAM talk to RDS and MemoryDB
+  - Use K8S Secure Store CSI driver to store JWT secret in AWS Secrets Manager
+  - Rotate secrets
+
+- Create a greeter environment with all components internal like in the dev version
+- Create a base-line case
+  - Use Secret resources provisioned off-band in etcd
+  - In PODs mount secrets as files
+- Secure the secrets in the dev-like version.
+  - Create an AWS Secrets Manager
+  - Load the CSI driver provider
+  - Create a Helm chart to make CSI provider classes (for the respective secrets)
+  - Populate it with the secrets
+  - Give the CSI driver permissions to access the Secrets Manager
+  - E.g. in a Azure KeyVault with the CSI driver to supply them.

@@ -1,15 +1,21 @@
+{{- with .Values.auth.service -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: auth-service
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     app.kubernetes.io/component: auth
     app.kubernetes.io/name: auth-service
     app.kubernetes.io/part-of: greeter
 spec:
-  type: {{ .Values.auth.service.type | default "ClusterIP" }}
+  type: {{ .type | default "ClusterIP" }}
   selector:
     app.kubernetes.io/name: auth
   ports:
   - port: 8080
     targetPort: 8080
+{{- end }}

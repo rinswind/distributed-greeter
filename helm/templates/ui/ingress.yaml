@@ -1,13 +1,10 @@
-{{- if .Values.ui.ingress.enabled -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
+{{- with .Values.ui.ingress -}}
+{{- if .enabled -}}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ui-ingress
-  {{- with .Values.messages.ingress.annotations }}
+  {{- with .annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -15,10 +12,11 @@ spec:
   rules:
     - http:
         paths:
-          {{- range .Values.ui.ingress.paths }}
+          {{- range .paths }}
           - path: {{ . }}
             backend:
               serviceName: ui-service
               servicePort: 8080
           {{- end }}
+{{- end }}
 {{- end }}

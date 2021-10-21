@@ -1,15 +1,21 @@
+{{- with .Values.messages.service -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: messages-service
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     app.kubernetes.io/component: messages
     app.kubernetes.io/name: messages-service
     app.kubernetes.io/part-of: greeter
 spec:
-  type: {{ .Values.messages.service.type | default "ClusterIP" }}
+  type: {{ .type | default "ClusterIP" }}
   selector:
     app.kubernetes.io/name: messages
   ports:
   - port: 8080
     targetPort: 8080
+{{- end }}

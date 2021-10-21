@@ -1,13 +1,10 @@
-{{- if .Values.messages.ingress.enabled -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
+{{- with .Values.messages.ingress -}}
+{{- if .enabled -}}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: messages-ingress
-  {{- with .Values.messages.ingress.annotations }}
+  {{- with .annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -15,10 +12,11 @@ spec:
   rules:
     - http:
         paths:
-          {{- range .Values.messages.ingress.paths }}
+          {{- range .paths }}
           - path: {{ . }}
             backend:
               serviceName: messages-service
               servicePort: 8080
           {{- end }}
-  {{- end }}
+{{- end }}
+{{- end }}

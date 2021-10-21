@@ -1,24 +1,26 @@
-{{- if .Values.auth.ingress.enabled -}}
-{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
-apiVersion: networking.k8s.io/v1beta1
-{{- else -}}
-apiVersion: extensions/v1beta1
-{{- end }}
+{{- with .Values.auth.ingress -}}
+{{- if .enabled -}}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: auth-ingress
-  {{- with .Values.auth.ingress.annotations }}
+  {{- with .annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  labels:
+    app.kubernetes.io/component: auth
+    app.kubernetes.io/name: auth-ingress
+    app.kubernetes.io/part-of: greeter
 spec:
   rules:
     - http:
         paths:
-          {{- range .Values.auth.ingress.paths }}
+          {{- range .paths }}
           - path: {{ . }}
             backend:
               serviceName: auth-service
               servicePort: 8080
           {{- end }}
-  {{- end }}
+{{- end }}
+{{- end }}

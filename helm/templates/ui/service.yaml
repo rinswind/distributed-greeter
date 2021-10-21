@@ -1,15 +1,21 @@
+{{- with .Values.ui.service -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: ui-service
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   labels:
     app.kubernetes.io/component: ui
     app.kubernetes.io/name: ui-service
     app.kubernetes.io/part-of: greeter
 spec:
-  type: {{ .Values.ui.service.type | default "ClusterIP" }}
+  type: {{ .type | default "ClusterIP" }}
   selector:
     app.kubernetes.io/name: ui
   ports:
   - port: 8080
-    targetPort: 80
+    targetPort: 8080
+{{- end }}
