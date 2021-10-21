@@ -19,19 +19,19 @@ spec:
         app.kubernetes.io/name: messages
         app.kubernetes.io/part-of: greeter
     spec:
+      {{- if and .serviceAccount.name }}
+      serviceAccountName: {{ .serviceAccount.name }}
+      {{- end }}
+      {{- if .image.pullSecrets }}
+      imagePullSecrets:
+      {{- range .image.pullSecrets }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}
       containers:
       - name: greeter
         image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: {{ .image.pullPolicy }}
-        {{- if .image.pullSecrets }}
-        imagePullSecrets:
-        {{- range .image.pullSecrets }}
-        - name: {{ . }}
-        {{- end }}
-        {{- end }}
-        {{- if and .serviceAccount.name }}
-        serviceAccountName: {{ .serviceAccount.name }}
-        {{- end }}
         ports:
         - containerPort: 8080
         # TODO Make this configurable together with a debug-capable image
