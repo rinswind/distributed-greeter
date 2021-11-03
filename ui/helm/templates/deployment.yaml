@@ -1,0 +1,37 @@
+{{- with .Values.deployment -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greeter-ui
+  labels:
+    app.kubernetes.io/component: greeter-ui
+    app.kubernetes.io/name: greeter-ui
+#    app.kubernetes.io/part-of: greeter
+spec:
+  replicas: {{ .replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: greeter-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: greeter-ui
+        app.kubernetes.io/name: greeter-ui
+#         app.kubernetes.io/part-of: greeter
+    spec:
+      {{- if $.Values.serviceAccount.create }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
+      {{- end }}
+      {{- if .pullSecrets }}
+      imagePullSecrets:
+      {{- range .pullSecrets }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: ui
+        image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
+        imagePullPolicy: {{ .image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+{{- end -}}

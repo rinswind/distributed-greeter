@@ -1,35 +1,35 @@
-{{- with .Values.auth }}
+{{- with .Values.deployment }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: auth
+  name: messages
   labels:
-    app.kubernetes.io/component: auth
-    app.kubernetes.io/name: auth
-    app.kubernetes.io/part-of: greeter
+    app.kubernetes.io/component: messages
+    app.kubernetes.io/name: messages
+#    app.kubernetes.io/part-of: greeter
 spec:
   replicas: {{ .replicaCount | default 1 }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: auth
+      app.kubernetes.io/name: messages
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: auth
-        app.kubernetes.io/name: auth
-        app.kubernetes.io/part-of: greeter
+        app.kubernetes.io/component: messages
+        app.kubernetes.io/name: messages
+#        app.kubernetes.io/part-of: greeter
     spec:
-      {{- if and .serviceAccount.name }}
-      serviceAccountName: {{ .serviceAccount.name }}
+      {{- if and $.Values.serviceAccount.create }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
       {{- end }}
-      {{- if .image.pullSecrets }}
+      {{- if .pullSecrets }}
       imagePullSecrets:
-      {{- range .image.pullSecrets }}
+      {{- range .pullSecrets }}
       - name: {{ . }}
       {{- end }}
       {{- end }}
       containers:
-      - name: auth
+      - name: greeter
         image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: {{ .image.pullPolicy }}
         ports:
@@ -41,15 +41,15 @@ spec:
         - name: HTTP_PORT
           value: "8080"
         - name: REDIS_ADDR
-          value: {{ .redis.addr }}
+          value: {{ $.Values.redis.addr }}
         - name: REDIS_CREDS
-          value: {{ .redis.credsFile }}
+          value: {{ $.Values.redis.credsFile }}
         - name: DB_ADDR
-          value: {{ .db.addr}}
+          value: {{ $.Values.db.addr}}
         - name: DB_CREDS
-          value: {{ .db.credsFile }}
+          value: {{ $.Values.db.credsFile }}
         - name: AUTH_TOKEN_CREDS
-          value: {{ .auth.credsFile }}
+          value: {{ $.Values.auth.credsFile }}
         {{- if .volumeMounts }}
         volumeMounts:
         {{- .volumeMounts | toYaml | nindent 8 }}
@@ -58,4 +58,4 @@ spec:
       volumes:
       {{- .volumes | toYaml | nindent 6 }}
       {{- end }}
-{{- end }}
+{{- end -}}

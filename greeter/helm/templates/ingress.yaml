@@ -1,0 +1,28 @@
+{{- if and .Values.ingress.enabled -}}
+{{- with .Values.ingress -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: messages-ingress
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: messages
+    app.kubernetes.io/name: messages-ingress
+#    app.kubernetes.io/part-of: greeter
+spec:
+  rules:
+  - http:
+      paths:
+      {{- range .paths }}
+      - path: {{ . }}
+        backend:
+          service:
+            name: messages-service
+            port:
+              number: 8080
+      {{- end }}
+{{- end -}}
+{{- end -}}

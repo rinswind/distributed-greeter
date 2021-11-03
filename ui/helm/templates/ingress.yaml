@@ -1,0 +1,28 @@
+{{- with .Values.ingress -}}
+{{- if .enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: greeter-ui-ingress
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    app.kubernetes.io/component: greeter-ui
+    app.kubernetes.io/name: greeter-ui-ingress
+#    app.kubernetes.io/part-of: greeter
+spec:
+  rules:
+  - http:
+      paths:
+      {{- range .paths }}
+      - path: {{ . }}
+        backend:
+          service:
+            name: greeter-ui-service
+            port:
+              number: 8080
+      {{- end }}
+{{- end }}
+{{- end }}

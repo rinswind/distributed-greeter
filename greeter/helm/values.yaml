@@ -1,0 +1,38 @@
+deployment:
+  replicaCount: 1
+  image:
+    repository: toboregistry.azurecr.io/example-services/greeter
+    tag: 1.0.0
+    pullPolicy: IfNotPresent
+  pullSecrets: []
+  volumes: []
+  volumeMounts: []
+
+serviceAccount:
+  create: true
+  name: messages-service-account
+#   annotations: {}
+
+service:
+  type: ClusterIP
+  annotations: {}
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx,
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # kubernetes.io/tls-acme: "true"
+  paths:
+  - "/greeter/messages(/|$)(.*)"
+
+redis:
+  addr: ""
+  credsFile: "/secrets/redis/redis-creds.json"
+
+db:
+  addr: ""
+  credsFile: "/secrets/db/db-creds.json"
+
+auth:
+  credsFile: "/secrets/auth/auth-token-creds.json"

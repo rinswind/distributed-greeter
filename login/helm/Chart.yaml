@@ -1,6 +1,6 @@
 apiVersion: v2
-name: greeter
-description: Distributed Greeter
+name: login-service
+description: Simple Login Service
 
 # A chart can be either an 'application' or a 'library' chart.
 #
