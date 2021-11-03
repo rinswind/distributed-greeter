@@ -7,18 +7,17 @@ deployment:
   pullSecrets: []
 
 serviceAccount:
-  create: true
-  name: greeter-ui-service-account
-  annotations: {}
+  create: false
+  # name: greeter-ui-service-account
+  # annotations: {}
 
 service:
   type: ClusterIP
   annotations: {}
 
 ingress:
-  enabled: true
-  annotations:
-    kubernetes.io/ingress.class: nginx
-#   kubernetes.io/tls-acme: "true"
-  paths:
-  - path: "/greeter(/|$)(.*)"
+  create: false
+  # annotations:
+  #   kubernetes.io/ingress.class: nginx
+  # paths:
+  # - path: "/greeter(/|$)(.*)"

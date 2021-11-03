@@ -9,21 +9,21 @@ deployment:
   volumeMounts: []
 
 serviceAccount:
-  create: true
-  name: auth-service-account
-  annotations: {}
+  create: false
+  # name: auth-service-account
+  # annotations: {}
 
 service:
   type: ClusterIP
   annotations: {}
 
 ingress:
-  enabled: true
-  annotations:
-    kubernetes.io/ingress.class: nginx,
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-  paths:
-  - path: "/greeter/auth(/|$)(.*)"
+  create: false
+  # annotations:
+  #   kubernetes.io/ingress.class: nginx,
+  #   nginx.ingress.kubernetes.io/rewrite-target: /$2
+  # paths:
+  # - path: "/greeter/auth(/|$)(.*)"
 
 
 redis:
