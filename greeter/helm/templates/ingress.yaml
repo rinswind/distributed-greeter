@@ -17,7 +17,8 @@ spec:
   - http:
       paths:
       {{- range .paths }}
-      - path: {{ . }}
+      - path: {{ .path }}
+        pathType: {{ .pathType | default "ImplementationSpecific" }}
         backend:
           service:
             name: messages-service
