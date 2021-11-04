@@ -20,7 +20,7 @@ spec:
 #        app.kubernetes.io/part-of: greeter
     spec:
       {{- if and $.Values.serviceAccount.create }}
-      serviceAccountName: {{ $.Values.serviceAccount.create }}
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
       {{- end }}
       {{- if .pullSecrets }}
       imagePullSecrets:
