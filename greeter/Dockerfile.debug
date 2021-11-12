@@ -1,12 +1,14 @@
 #
 # Builder
 #
-FROM example-services/builder AS builder
+FROM example-services/builder:latest AS builder
 
 # 
 # Runtime
 #
 FROM example-services/base-debug:latest
+
+COPY config.yaml /usr/bin
 
 ENV HTTP_PORT="8080"
 

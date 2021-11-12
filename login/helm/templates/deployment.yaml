@@ -40,16 +40,19 @@ spec:
         env:
         - name: HTTP_PORT
           value: "8080"
-        - name: REDIS_ADDR
-          value: {{ $.Values.redis.addr }}
-        - name: REDIS_CREDS
-          value: {{ $.Values.redis.credsFile }}
-        - name: DB_ADDR
-          value: {{ $.Values.db.addr}}
-        - name: DB_CREDS
-          value: {{ $.Values.db.credsFile }}
-        - name: AUTH_TOKEN_CREDS
-          value: {{ $.Values.auth.credsFile }}
+        - name: REDIS_ENDPOINT
+          value: {{ $.Values.redis.endpoint }}
+        - name: REDIS_CONFIG_DIR
+          value: {{ $.Values.redis.configDir }}
+        - name: DB_CONFIG_ENDPOINT
+          value: {{ $.Values.db.endpoint}}
+        - name: DB_CONFIG_DIR
+          value: {{ $.Values.db.configDir }}
+        - name: AUTH_TOKEN_CONFIG_DIR
+          value: {{ $.Values.auth.configDir }}
+        {{- if .env }}
+        {{- .env  | toYaml | nindent 8 }}
+        {{- end }}
         {{- if .volumeMounts }}
         volumeMounts:
         {{- .volumeMounts | toYaml | nindent 8 }}

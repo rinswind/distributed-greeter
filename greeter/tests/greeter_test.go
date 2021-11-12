@@ -58,7 +58,7 @@ func TestAuthzSplit(t *testing.T) {
 	//
 	greeterServiceLangs := greeterService + "/greetings"
 
-	req, err := http.NewRequest("GET", greeterServiceLangs, nil)
+	req, _ := http.NewRequest("GET", greeterServiceLangs, nil)
 	req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
@@ -73,7 +73,7 @@ func TestAuthzSplit(t *testing.T) {
 
 	for _, path := range langJSON.Langs {
 		langService := greeterService + path
-		req, err = http.NewRequest("GET", langService, nil)
+		req, _ = http.NewRequest("GET", langService, nil)
 		req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
 		resp, err = http.DefaultClient.Do(req)
 		if err != nil {
@@ -108,9 +108,9 @@ func TestAuthzSplit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req, err = http.NewRequest("GET", greeterServiceLangs, nil)
+	req, _ = http.NewRequest("GET", greeterServiceLangs, nil)
 	req.Header.Add("Authorization", "Bearer "+base64.StdEncoding.EncodeToString([]byte(loginInfo.AccessToken)))
-	resp, err = http.DefaultClient.Do(req)
+	resp, _ = http.DefaultClient.Do(req)
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatal(resp)
 	}

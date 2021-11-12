@@ -7,6 +7,7 @@ deployment:
   pullSecrets: []
   volumes: []
   volumeMounts: []
+  env: []
 
 serviceAccount:
   create: false
@@ -26,12 +27,12 @@ ingress:
   # - path: "/greeter/messages(/|$)(.*)"
 
 redis:
-  addr: ""
-  credsFile: "/secrets/redis/redis-creds.json"
+  endpoint: ""
+  configDir: "/var/secrets/redis"
 
 db:
-  addr: ""
-  credsFile: "/secrets/db/db-creds.json"
+  endpoint: ""
+  configDir: "/var/secrets/db"
 
 auth:
-  credsFile: "/secrets/auth/auth-token-creds.json"
+  configDir: "/var/secrets/at"
