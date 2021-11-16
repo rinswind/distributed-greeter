@@ -33,5 +33,5 @@ spec:
         image: "{{ .image.repository }}:{{ .image.tag | default $.Chart.AppVersion }}"
         imagePullPolicy: {{ .image.pullPolicy }}
         ports:
-        - containerPort: 8080
+        - containerPort: 80
 {{- end -}}
