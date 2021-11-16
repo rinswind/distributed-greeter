@@ -25,19 +25,21 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmsgprefix | log.Lshortfile)
 
 	var err error
-	config := config.ReadConfig()
+	cfg := config.ReadConfig()
 
 	// Create the redis client
+	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
 	redis := redis.NewClient(&redis.Options{
-		Addr:     config.Redis.Endpoint,
-		Password: config.Redis.AccessKey,
+		Addr:     cfg.Redis.Endpoint,
+		Password: cfg.Redis.AccessKey,
 	})
 	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
 
 	// Create the DB client
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", config.Db.User, config.Db.Password, config.Db.Endpoint))
+	log.Printf("Resolved MySQL endpoint: %v", cfg.Db.Endpoint)
+	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", cfg.Db.User, cfg.Db.Password, cfg.Db.Endpoint))
 	check(err)
 	defer db.Close()
 
@@ -50,11 +52,12 @@ func main() {
 	// Create the auth session manager
 	authReader := &tokens.AuthReader{
 		Redis:    redis,
-		ATSecret: config.AccessToken.AccessTokenSecret,
-		RTSecret: config.AccessToken.RefreshTokenSecret}
+		ATSecret: cfg.AccessToken.AccessTokenSecret,
+		RTSecret: cfg.AccessToken.RefreshTokenSecret}
 
 	// Create and run the greeter endpoint
-	iface := fmt.Sprintf(":%v", config.Http.Port)
+	iface := fmt.Sprintf(":%v", cfg.Http.Port)
+	log.Printf("Resolved HTTP server endpoint: %v", iface)
 	greeterEndpoint := server.GreeterEndpoint{
 		Iface:      iface,
 		AuthReader: authReader,

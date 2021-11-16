@@ -24,6 +24,7 @@ func main() {
 	var err error
 
 	// Create the Redis client
+	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
 	redis := redis.NewClient(&redis.Options{
 		Addr:     cfg.Redis.Endpoint,
 		Password: cfg.Redis.AccessKey,
@@ -33,6 +34,7 @@ func main() {
 	defer redis.Close()
 
 	// Create the DB client
+	log.Printf("Resolved MySQL endpoint: %v", cfg.Db.Endpoint)
 	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", cfg.Db.User, cfg.Db.Password, cfg.Db.Endpoint))
 	check(err)
 	defer db.Close()
@@ -57,6 +59,7 @@ func main() {
 
 	// Create and run the REST endpoint
 	iface := fmt.Sprintf(":%v", cfg.Http.Port)
+	log.Printf("Resolved HTTP server endpoint: %v", iface)
 	le := server.LoginEndpoint{
 		Iface:      iface,
 		AuthReader: &authReader,
