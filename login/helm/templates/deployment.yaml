@@ -44,7 +44,7 @@ spec:
           value: {{ $.Values.redis.endpoint }}
         - name: REDIS_CONFIG_DIR
           value: {{ $.Values.redis.configDir }}
-        - name: DB_CONFIG_ENDPOINT
+        - name: DB_ENDPOINT
           value: {{ $.Values.db.endpoint}}
         - name: DB_CONFIG_DIR
           value: {{ $.Values.db.configDir }}
