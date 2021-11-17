@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -25,18 +26,26 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmsgprefix | log.Lshortfile)
 
 	var err error
-	config := config.ReadConfig()
+	cfg := config.ReadConfig()
 
-	redis := redis.NewClient(&redis.Options{
-		Addr:     config.Redis.Endpoint,
-		Password: config.Redis.AccessKey,
-	})
+	// Create the Redis client
+	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
+	redisOpts := redis.Options{
+		Addr:     cfg.Redis.Endpoint,
+		Username: cfg.Redis.User,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.Db,
+	}
+	if cfg.Redis.TLS {
+		redisOpts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	redis := redis.NewClient(&redisOpts)
 	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
 
 	// Create the DB client
-	db, err := sql.Open("mysqlMsi", config.Db.Endpoint)
+	db, err := sql.Open("mysqlMsi", cfg.Db.Endpoint)
 	check(err)
 	defer db.Close()
 
@@ -49,11 +58,11 @@ func main() {
 	// Create the auth session manager
 	authReader := &tokens.AuthReader{
 		Redis:    redis,
-		ATSecret: config.AccessToken.AccessTokenSecret,
-		RTSecret: config.AccessToken.RefreshTokenSecret}
+		ATSecret: cfg.AccessToken.AccessTokenSecret,
+		RTSecret: cfg.AccessToken.RefreshTokenSecret}
 
 	// Create and run the greeter endpoint
-	iface := fmt.Sprintf(":%v", config.Http.Port)
+	iface := fmt.Sprintf(":%v", cfg.Http.Port)
 	greeterEndpoint := server.GreeterEndpoint{
 		Iface:      iface,
 		AuthReader: authReader,

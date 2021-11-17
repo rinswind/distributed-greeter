@@ -1,6 +1,14 @@
 Http:
   Port: 8080
   CertFile: /var/secrets/ca.crt
+
+Db:
+  Name: messages
 DbConfigDir: /var/secrets/db
+
+Redis:
+  Db: 0
+  TLS: false
 RedisConfigDir: /var/secrets/redis
+
 AccessTokenConfigDir: /var/secrets/at

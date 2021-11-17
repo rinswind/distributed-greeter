@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -24,10 +25,17 @@ func main() {
 	var err error
 
 	// Create the Redis client
-	redis := redis.NewClient(&redis.Options{
+	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
+	redisOpts := redis.Options{
 		Addr:     cfg.Redis.Endpoint,
-		Password: cfg.Redis.AccessKey,
-	})
+		Username: cfg.Redis.User,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.Db,
+	}
+	if cfg.Redis.TLS {
+		redisOpts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	redis := redis.NewClient(&redisOpts)
 	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()

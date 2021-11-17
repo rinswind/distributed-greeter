@@ -12,14 +12,18 @@ type Config struct {
 
 	Db struct {
 		Endpoint string `yaml:"Endpoint" env:"DB_ENDPOINT,overwrite"`
+		Name     string `yaml:"Name" env:"DB_NAME,overwrite"`
 		User     string `yaml:"User" env:"DB_USER,overwrite"`
 		Password string `yaml:"Password" env:"DB_PASSWORD,overwrite"`
 	} `yaml:"Db"`
 	DbConfigDir string `yaml:"DbConfigDir" env:"DB_CONFIG_DIR,overwrite"`
 
 	Redis struct {
-		Endpoint  string `yaml:"Endpoint" env:"REDIS_ENDPOINT,overwrite"`
-		AccessKey string `yaml:"AccessKey" env:"REDIS_ACCESS_KEY,overwrite"`
+		Endpoint string `yaml:"Endpoint" env:"REDIS_ENDPOINT,overwrite"`
+		Db       int    `yaml:"Db" env:"REDIS_DB,overwrite"`
+		User     string `yaml:"User" env:"REDIS_User,overwrite"`
+		Password string `yaml:"Password" env:"REDIS_PASSWORD,overwrite"`
+		TLS      bool   `yaml:"TLS" env:"REDIS_TLS,overwrite"`
 	} `yaml:"Redis"`
 	RedisConfigDir string `yaml:"RedisConfigDir" env:"REDIS_CONFIG_DIR,overwrite"`
 

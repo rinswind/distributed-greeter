@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"fmt"
 	"log"
@@ -27,19 +28,26 @@ func main() {
 	var err error
 	cfg := config.ReadConfig()
 
-	// Create the redis client
+	// Create the Redis client
 	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
-	redis := redis.NewClient(&redis.Options{
+	redisOpts := redis.Options{
 		Addr:     cfg.Redis.Endpoint,
-		Password: cfg.Redis.AccessKey,
-	})
+		Username: cfg.Redis.User,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.Db,
+	}
+	if cfg.Redis.TLS {
+		redisOpts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	redis := redis.NewClient(&redisOpts)
 	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
 
 	// Create the DB client
 	log.Printf("Resolved MySQL endpoint: %v", cfg.Db.Endpoint)
-	db, err := sql.Open("mysql", fmt.Sprintf("%v:%v@%v", cfg.Db.User, cfg.Db.Password, cfg.Db.Endpoint))
+	mysqlDsn := fmt.Sprintf("%v:%v@tcp(%v)/%v", cfg.Db.User, cfg.Db.Password, cfg.Db.Endpoint, cfg.Db.Name)
+	db, err := sql.Open("mysql", mysqlDsn)
 	check(err)
 	defer db.Close()
 

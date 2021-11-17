@@ -41,13 +41,12 @@
 - Fine grained handling of JWT token parsing errors
   - E.g. expired tokens must not fail a call to `/logout`
   - *Note*: A chance to learn modern-day error handling in Go
-- **(PROGRESS)** Add a Helm chart
+- **(DONE)** Add a Helm chart
   - **(DONE)** Customizable images/replica count
   - Customizable ingress: annotations to select something that's not "nginx"
   - Customizable secrets for the security token
-  - Optional deployment of redis in case one is provided by the cloud is used
   - Optional debug services
-- Move Redis from the Helm chart into it's own chart
+- **(DONE)** Move Redis from the Helm chart into it's own chart
 - Setup a JS dev environment for the UI
 - **(DONE)** Fix the REST API
   - At login return: `{ token: opaque, loginId: UUID, userId: int }`
@@ -65,6 +64,10 @@
   - [https://danishpraka.sh/2019/12/07/using-makefiles-for-go.html]
 - Fix the UI build to use Make
   - Perhaps make it into a Go server of static content?
+
+## Secrets Management
+
+- Add a "secrets mounter" pod to the CSI SecretsProviderClass to allow the export of Secret resources when needed
 
 ## Create an Azure version with the "suggested security architecture"
 
@@ -107,6 +110,11 @@
 
 ## Create an AWS version with the "suggested security architecture"
 
+- Rewrite `mysql-init` in Go
+  - That will generate random passwords
+  - Or make a Terraform config to make Dbs?
+  - That will create the given Db if it doesn't exist and generate a user/pass and store them in SSM
+
 - *NOTE*: The suggested security architecture
   - Use RDS (rather than MySQL pods)
   - Use MemoryDB for Redis (rather than Redis pods)
@@ -115,11 +123,10 @@
   - Rotate secrets
 
 - Create a greeter environment with all components internal like in the dev version
-- Create a base-line case
+- **(DONE)** Create a base-line case
   - Use Secret resources provisioned off-band in etcd
   - In PODs mount secrets as files
-- Secure the secrets in the dev-like version.
-  - Create an AWS Secrets Manager
+- **(DONE)** Secure the secrets in the dev-like version.
   - Load the CSI driver provider
   - Create a Helm chart to make CSI provider classes (for the respective secrets)
   - Populate it with the secrets
