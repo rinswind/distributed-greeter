@@ -2,6 +2,13 @@ Http:
   Port: 8080
   CertFile: /var/secrets/ca.crt
 
+# Azure
+#Db:
+#  Dsn: "tcp({{ .Endpoint }})/{{ .Name }}"
+#  Driver: "mysqlMsi"
+#  # Endpoint: ""
+#  Name: messages
+
 Db:
   Dsn: "{{ .User }}:{{ .Password }}@tcp({{ .Endpoint }})/{{ .Name }}"
   Driver: "mysql"

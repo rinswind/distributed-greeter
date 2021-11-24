@@ -12,6 +12,7 @@ type Config struct {
 
 	Db struct {
 		Dsn      string `yaml:"Dsn" env:"DSN,overwrite"`
+		Driver   string `yaml:"Driver" env:"DRIVER,overwite`
 		Endpoint string `yaml:"Endpoint" env:"ENDPOINT,overwrite"`
 		Name     string `yaml:"Name" env:"NAME,overwrite"`
 		User     string `yaml:"User" env:"USER,overwrite"`

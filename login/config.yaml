@@ -2,8 +2,16 @@ Http:
   Port: 8080
   CertFile: /var/secrets/ca.crt
 
+# Azure
+#Db:
+#  Dsn: "tcp({{ .Endpoint }})/{{ .Name }}"
+#  Driver: "mysqlMsi"
+#  # Endpoint: ""
+#  Name: login
+
 Db:
-  Dsn: mysql://{{ .User }}:{{ .Password }}@tcp({{ .Endpoint }})/{{ .Name }}
+  Dsn: "{{ .User }}:{{ .Password }}@tcp({{ .Endpoint }})/{{ .Name }}"
+  Driver: "mysql"
   # User: ""
   # Password: ""
   # Endpoint: ""
@@ -11,7 +19,7 @@ Db:
 DbConfigDir: /var/secrets/db
 
 Redis:
-  Dsn: redis://{{ .Endpoint }}
+  Dsn: "redis://{{ .Endpoint }}"
   # Dsn: redis://{{ .User }}:{{ .Password }}@{{ .Endpoint }}/{{ .Db }}
   # User: ""
   # Password: ""
