@@ -16,28 +16,36 @@ Http:
   CertFile: ca.crt
 
 Db:
-  Endpoint: db-test
+  Dsn: "mysql://{{ .User }}:{{ .Password }}@tcp({{ .Endpoint }})/{{ .Name }}"
+#  Dsn: "mysql://static-user:static-password@tcp(static-endpoint)/static-db"
+  Name: yaml-db-name
+  User: yaml-db-user
+  Endpoint: yaml-db-endpoint:3306
 DbConfigDir: db-creds
 
 Redis:
-  Endpoint: redis-test
+  Dsn: "redis://{{ .Endpoint }}/{{ .Db }}"
+  Db: 100
+  Endpoint: yaml-redis-endpoint
 RedisConfigDir: redis-creds
 
 AccessTokenConfigDir: at-creds
 `)
 
-	setupEnv(t, "DB_ENDPOINT", "env-db-test")
+	setupEnv(t, "DB_ENDPOINT", "env-db-endpoint")
 
-	setupDir(t, "db-creds", map[string]string{"db_user": "file-user", "DB_PASSWORD": "file-password"})
-	setupDir(t, "redis-creds", map[string]string{"redis_access_key": "redis-key"})
-	setupDir(t, "at-creds", map[string]string{"at_access_token_secret": "at-secret", "at_refresh_token_secret": "rt-secret"})
+	setupDir(t, "db-creds", map[string]string{"db_user": "file-db-user", "DB_PASSWORD": "file-db-password"})
+	setupDir(t, "redis-creds", map[string]string{"redis_password": "file-redis-password", "redis-endpoint": "file-redis-endpoint"})
+	setupDir(t, "at-creds", map[string]string{"at_access_token_secret": "file-at-secret", "at_refresh_token_secret": "file-rt-secret"})
 
 	cfg := config.ReadConfig()
 	t.Logf("%+v\n", cfg)
 
-	assertTrue(t, "DB_ENDPOINT override", cfg.Db.Endpoint == "env-db-test")
-	assertTrue(t, "Db.User file override", cfg.Db.User == "file-user")
-	assertTrue(t, "Db.Password file override", cfg.Db.Password == "file-password")
+	assertTrue(t, "DB_ENDPOINT override", cfg.Db.Endpoint == "env-db-endpoint")
+	assertTrue(t, "Db.User file override", cfg.Db.User == "file-db-user")
+	assertTrue(t, "Db.Password file override", cfg.Db.Password == "file-db-password")
+	assertTrue(t, "Db.Dsn is correct", cfg.Db.Dsn == "mysql://file-db-user:file-db-password@tcp(env-db-endpoint)/yaml-db-name")
+	assertTrue(t, "Redis.Dsn is correct", cfg.Redis.Dsn == "redis://file-redis-endpoint/100")
 }
 
 func setupEnv(t *testing.T, key string, val string) string {

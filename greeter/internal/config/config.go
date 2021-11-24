@@ -11,27 +11,30 @@ type Config struct {
 	} `yaml:"Http"`
 
 	Db struct {
-		Endpoint string `yaml:"Endpoint" env:"DB_ENDPOINT,overwrite"`
-		Name     string `yaml:"Name" env:"DB_NAME,overwrite"`
-		User     string `yaml:"User" env:"DB_USER,overwrite"`
-		Password string `yaml:"Password" env:"DB_PASSWORD,overwrite"`
-	} `yaml:"Db"`
-	DbConfigDir string `yaml:"DbConfigDir" env:"DB_CONFIG_DIR,overwrite"`
+		Dsn      string `yaml:"Dsn" env:"DSN,overwrite"`
+		Driver   string `yaml:"Driver" env:"DRIVER,overwite`
+		Endpoint string `yaml:"Endpoint" env:"ENDPOINT,overwrite"`
+		Name     string `yaml:"Name" env:"NAME,overwrite"`
+		User     string `yaml:"User" env:"USER,overwrite"`
+		Password string `yaml:"Password" env:"PASSWORD,overwrite"`
+	} `yaml:"Db" env:",prefix=DB_"`
+	DbConfigDir string `yaml:"DbConfigDir"`
 
 	Redis struct {
-		Endpoint string `yaml:"Endpoint" env:"REDIS_ENDPOINT,overwrite"`
-		Db       int    `yaml:"Db" env:"REDIS_DB,overwrite"`
-		User     string `yaml:"User" env:"REDIS_User,overwrite"`
-		Password string `yaml:"Password" env:"REDIS_PASSWORD,overwrite"`
-		TLS      bool   `yaml:"TLS" env:"REDIS_TLS,overwrite"`
-	} `yaml:"Redis"`
-	RedisConfigDir string `yaml:"RedisConfigDir" env:"REDIS_CONFIG_DIR,overwrite"`
+		Dsn      string `yaml:"Dsn" env:"DSN,overwrite"`
+		Endpoint string `yaml:"Endpoint" env:"ENDPOINT,overwrite"`
+		Db       int    `yaml:"Db" env:"DB,overwrite"`
+		User     string `yaml:"User" env:"User,overwrite"`
+		Password string `yaml:"Password" env:"PASSWORD,overwrite"`
+		TLS      bool   `yaml:"TLS" env:"TLS,overwrite"`
+	} `yaml:"Redis" env:",prefix=REDIS_"`
+	RedisConfigDir string `yaml:"RedisConfigDir"`
 
 	AccessToken struct {
-		AccessTokenSecret  string `yaml:"AccessTokenSecret" env:"AT_ACCESS_TOKEN_SECRET",overwrite`
-		RefreshTokenSecret string `yaml:"RefreshTokenSecret" env:"AT_REFRESH_TOKEN_SECRET",overwrite`
-	} `yaml:"AccessToken"`
-	AccessTokenConfigDir string `yaml:"AccessTokenConfigDir" env:"AT_CONFIG_DIR,overwrite"`
+		AccessTokenSecret  string `yaml:"AccessTokenSecret" env:"ACCESS_TOKEN_SECRET",overwrite`
+		RefreshTokenSecret string `yaml:"RefreshTokenSecret" env:"REFRESH_TOKEN_SECRET",overwrite`
+	} `yaml:"AccessToken" env:",prefix=AT_"`
+	AccessTokenConfigDir string `yaml:"AccessTokenConfigDir"`
 }
 
 func ReadConfig() *Config {
@@ -43,18 +46,15 @@ func ReadConfig() *Config {
 	var cfg Config
 
 	loadYaml(&cfg, configFile)
+
+	loadDir(&cfg, cfg.DbConfigDir)
+	loadDir(&cfg, cfg.RedisConfigDir)
+	loadDir(&cfg, cfg.AccessTokenConfigDir)
+
 	loadEnv(&cfg)
 
-	loadEnv(&cfg.Http)
-
-	loadDir(&cfg.Db, cfg.DbConfigDir)
-	loadEnv(&cfg.Db)
-
-	loadDir(&cfg.Redis, cfg.RedisConfigDir)
-	loadEnv(&cfg.Redis)
-
-	loadDir(&cfg.AccessToken, cfg.AccessTokenConfigDir)
-	loadEnv(&cfg.AccessToken)
+	expandTemplate(&cfg.Db.Dsn, &cfg.Db)
+	expandTemplate(&cfg.Redis.Dsn, &cfg.Redis)
 
 	return &cfg
 }

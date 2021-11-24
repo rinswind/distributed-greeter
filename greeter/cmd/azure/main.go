@@ -15,12 +15,6 @@ import (
 	"github.com/rinswind/distributed-greeter/greeter/internal/users"
 )
 
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func main() {
 	// Setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmsgprefix | log.Lshortfile)
@@ -30,22 +24,20 @@ func main() {
 
 	// Create the Redis client
 	log.Printf("Resolved Redis endpoint: %v", cfg.Redis.Endpoint)
-	redisOpts := redis.Options{
-		Addr:     cfg.Redis.Endpoint,
-		Username: cfg.Redis.User,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.Db,
-	}
+	redisOpts, err := redis.ParseURL(cfg.Redis.Dsn)
+	check(err)
 	if cfg.Redis.TLS {
 		redisOpts.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 	}
-	redis := redis.NewClient(&redisOpts)
+
+	redis := redis.NewClient(redisOpts)
 	_, err = redis.Ping(context.Background()).Result()
 	check(err)
 	defer redis.Close()
 
 	// Create the DB client
-	db, err := sql.Open("mysqlMsi", cfg.Db.Endpoint)
+	log.Printf("Resolved MySQL endpoint: %v", cfg.Db.Endpoint)
+	db, err := sql.Open(cfg.Db.Driver, cfg.Db.Dsn)
 	check(err)
 	defer db.Close()
 
@@ -63,9 +55,16 @@ func main() {
 
 	// Create and run the greeter endpoint
 	iface := fmt.Sprintf(":%v", cfg.Http.Port)
+	log.Printf("Resolved HTTP server endpoint: %v", iface)
 	greeterEndpoint := server.GreeterEndpoint{
 		Iface:      iface,
 		AuthReader: authReader,
 		Users:      users}
 	greeterEndpoint.Run()
+}
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
 }

@@ -3,11 +3,21 @@ Http:
   CertFile: /var/secrets/ca.crt
 
 Db:
+  Dsn: "{{ .User }}:{{ .Password }}@tcp({{ .Endpoint }})/{{ .Name }}"
+  Driver: "mysql"
+  # User: ""
+  # Password: ""
+  # Endpoint: ""
   Name: messages
 DbConfigDir: /var/secrets/db
 
 Redis:
-  Db: 0
+  Dsn: "redis://{{ .Endpoint }}"
+  # Dsn: redis://{{ .User }}:{{ .Password }}@{{ .Endpoint }}/{{ .Db }}
+  # User: ""
+  # Password: ""
+  # Endpoint: ""
+  # Db: 0
   TLS: false
 RedisConfigDir: /var/secrets/redis
 

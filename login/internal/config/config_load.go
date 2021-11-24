@@ -1,11 +1,13 @@
 package config
 
 import (
+	"bytes"
 	"context"
 	"log"
 	"os"
 	"path"
 	"strings"
+	"text/template"
 
 	"github.com/sethvargo/go-envconfig"
 	"gopkg.in/yaml.v2"
@@ -24,19 +26,19 @@ func (dl *dirLookup) Lookup(key string) (string, bool) {
 		strings.ToLower(kebabKey),
 	}
 
-	var errors []error
+	//	var errors []error
 
 	for _, name := range names {
 		val, err := os.ReadFile(path.Join(dl.path, name))
 		if err == nil {
 			return string(val), true
 		}
-		errors = append(errors, err)
+		//		errors = append(errors, err)
 	}
 
-	for _, e := range errors {
-		log.Printf("Failed to load var %v file: %v", key, e)
-	}
+	// for _, e := range errors {
+	// 	log.Printf("Failed to load var %v file: %v", key, e)
+	// }
 
 	return "", false
 }
@@ -68,4 +70,10 @@ func loadEnv(data interface{}) {
 	if err != nil {
 		log.Printf("Failed to load env: %v", err)
 	}
+}
+
+func expandTemplate(expand *string, args interface{}) {
+	buff := bytes.NewBufferString("")
+	template.Must(template.New(*expand).Parse(*expand)).Execute(buff, args)
+	*expand = buff.String()
 }

@@ -28,11 +28,6 @@ ingress:
 
 redis:
   endpoint: ""
-  configDir: "/var/secrets/redis"
 
 db:
   endpoint: ""
-  configDir: "/var/secrets/db"
-
-auth:
-  configDir: "/var/secrets/at"

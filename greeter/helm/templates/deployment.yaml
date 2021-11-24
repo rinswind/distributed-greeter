@@ -34,7 +34,7 @@ spec:
         imagePullPolicy: {{ .image.pullPolicy }}
         ports:
         - containerPort: 8080
-        # TODO Make this configurable together with a debug-capable image
+        # TODO Add a debug switch in the chart that will add this port and use a "debug" tag for the image
         # Remote debug port
         - containerPort: 40000
         env:
@@ -42,14 +42,8 @@ spec:
           value: "8080"
         - name: REDIS_ENDPOINT
           value: {{ $.Values.redis.endpoint }}
-        - name: REDIS_CONFIG_DIR
-          value: {{ $.Values.redis.configDir }}
         - name: DB_ENDPOINT
           value: {{ $.Values.db.endpoint}}
-        - name: DB_CONFIG_DIR
-          value: {{ $.Values.db.configDir }}
-        - name: AUTH_TOKEN_CONFIG_DIR
-          value: {{ $.Values.auth.configDir }}
         {{- if .env }}
         {{- .env  | toYaml | nindent 8 }}
         {{- end }}
