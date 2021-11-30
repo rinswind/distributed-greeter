@@ -19,5 +19,7 @@ ingress:
   create: false
   # annotations:
   #   kubernetes.io/ingress.class: nginx
+  # host: example.org
+  # tlsSecret: example-org-secret
   # paths:
   # - path: "/greeter(/|$)(.*)"

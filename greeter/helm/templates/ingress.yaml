@@ -13,8 +13,17 @@ metadata:
     app.kubernetes.io/name: messages-ingress
 #    app.kubernetes.io/part-of: greeter
 spec:
+  {{ if and .tlsSecret -}}
+  tls:
+  - hosts:
+    - {{ required "Host is needed when using TLS" .host }}
+    secretName: {{ .tlsSecret }}
+  {{ end -}}
   rules:
-  - http:
+  - {{ if and .host -}}
+    host: {{ .host }}
+    {{ end -}}
+    http:
       paths:
       {{- range .paths }}
       - path: {{ .path }}
@@ -25,5 +34,5 @@ spec:
             port:
               number: 8080
       {{- end }}
-{{- end -}}
-{{- end -}}
+{{- end }}
+{{- end }}

@@ -64,6 +64,17 @@
   - [https://danishpraka.sh/2019/12/07/using-makefiles-for-go.html]
 - Fix the UI build to use Make
   - Perhaps make it into a Go server of static content?
+- Secure Ingress
+  - Fix helm charts to allow TLS configuration to be defined in the Ingress
+  - Create self-signed certificate
+  - Put certificate in AWS SSL
+  - Configure Secrets Store CSI driver to load pub/priv certs and sync to a Secret resource
+  - Configure Ingress to use TLS with that resource
+  - *Q*: Does anything have to be done with domains?
+  - Generate a self-signed cert for `example.org`
+    `openssl req -x509 -newkey rsa:4096 -nodes -subj '/CN=greeter.saglive.cloud' -keyout tls.key -out tls.crt -sha256 -days 365`
+  - Generate a TLS Secret
+    `kubectl create secret tls -n greeter-aws greeter-saglive-cloud-secret --cert=tls.crt --key=tls.key`
 
 ## Secrets Management
 
@@ -117,8 +128,8 @@
 
 - *NOTE*: The suggested security architecture
   - Use RDS (rather than MySQL pods)
-  - Use MemoryDB for Redis (rather than Redis pods)
-  - Use IAM talk to RDS and MemoryDB
+  - Use Elasticache for Redis (rather than Redis pods)
+  - Use IAM to talk to RDS and MemoryDB
   - Use K8S Secure Store CSI driver to store JWT secret in AWS Secrets Manager
   - Rotate secrets
 
