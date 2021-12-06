@@ -5,6 +5,9 @@ deployment:
     pullPolicy: IfNotPresent
 #    tag: 1.0.0
   pullSecrets: []
+  volumes: []
+  volumeMounts: []
+  env: []
 
 serviceAccount:
   create: false
